@@ -244,6 +244,7 @@ struct SettingsView: View {
                 .font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.Ink.tertiary)
             TextField("Search sites, or type a domain to block", text: $blockSearch)
                 .textFieldStyle(.plain).font(.rowTitle).foregroundStyle(Theme.Ink.primary)
+                .autocorrectionDisabled(true)   // domains shouldn't get autocorrected
             if !blockSearch.isEmpty {
                 Button { blockSearch = "" } label: {
                     Image(systemName: "xmark.circle.fill").font(.system(size: 13)).foregroundStyle(Theme.Ink.faint)
