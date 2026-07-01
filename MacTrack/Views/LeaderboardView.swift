@@ -20,7 +20,19 @@ struct LeaderboardView: View {
             .padding(.bottom, 6)
 
             if days.isEmpty {
-                EmptyStateView(scope: .all)
+                VStack(spacing: 6) {
+                    Image(systemName: "trophy")
+                        .font(.system(size: 22, weight: .light))
+                        .foregroundStyle(Theme.Ink.faint)
+                    Text("No best days yet")
+                        .font(.rowTitle).foregroundStyle(Theme.Ink.secondary)
+                    Text("Once you've finished a full day of tracking, your least-distracted days show up here.")
+                        .font(.rowMeta).foregroundStyle(Theme.Ink.tertiary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 26)
             } else {
                 VStack(spacing: 2) {
                     ForEach(Array(days.enumerated()), id: \.offset) { i, seconds in
