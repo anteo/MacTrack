@@ -287,10 +287,12 @@ struct SettingsView: View {
     /// you type that you've never visited).
     private var blockCandidates: [UsageEntry] {
         let query = blockSearch.trimmingCharacters(in: .whitespaces)
+        // Default list: the 15 most recent sites you've spent real time on (≥10 min).
         if query.isEmpty { return store.recentSites(limit: 15) }
+        // Searching should find any site you've *ever* visited (no time floor).
         let ql = query.lowercased()
         let norm = normalizedDomain(query)
-        var result = store.recentSites(limit: 500).filter { e in
+        var result = store.recentSites(limit: 1000, minTotal: 0).filter { e in
             e.title.lowercased().contains(ql) || siteDomain(e).lowercased().contains(norm.isEmpty ? ql : norm)
         }
         if isPlausibleDomain(norm), !result.contains(where: { siteDomain($0).lowercased() == norm }) {

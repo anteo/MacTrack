@@ -325,18 +325,26 @@ final class UsageStore: ObservableObject {
     }
 
     /// Your most-recently-visited sites across *all* history (newest first), so you
-    /// can block one from settings even if you haven't opened it today. Includes X
+    /// can block one from settings even if you haven't opened it today. Only sites
+    /// you've spent a real amount of time on (≥ `minTotal`, default 10 min total)
+    /// qualify, so a one-minute drive-by never clutters the list. Includes X
     /// per-account keys ("x.com/@handle"). Powers the settings block picker.
-    func recentSites(limit: Int = 15) -> [UsageEntry] {
+    func recentSites(limit: Int = 15, minTotal: Double = 600) -> [UsageEntry] {
         var lastSeen: [String: Date] = [:]
+        var total: [String: Double] = [:]
         for day in days.values {
             for stat in day.sites.values where !excludedSites.contains(stat.domain) {
+                total[stat.domain, default: 0] += stat.seconds
                 let last = stat.lastActive ?? .distantPast
                 if let cur = lastSeen[stat.domain] { if last > cur { lastSeen[stat.domain] = last } }
                 else { lastSeen[stat.domain] = last }
             }
         }
-        return lastSeen.sorted { $0.value > $1.value }.prefix(limit).map { domain, _ in
+        return lastSeen
+            .filter { (total[$0.key] ?? 0) >= minTotal }
+            .sorted { $0.value > $1.value }
+            .prefix(limit)
+            .map { domain, _ in
             UsageEntry(
                 id: "site:" + domain,
                 kind: .site(domain: domain),
