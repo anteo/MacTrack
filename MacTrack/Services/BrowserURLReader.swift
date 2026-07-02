@@ -228,6 +228,7 @@ enum DomainReducer {
     private static let searchBrands: Set<String> = [
         "google", "bing", "duckduckgo", "yahoo", "ecosia", "startpage",
         "yandex", "baidu", "qwant", "kagi", "brave", "aol", "ask",
+        "perplexity", "phind", "mojeek", "searx", "swisscows", "lite",
     ]
 
     /// True for a search-*results* page — a search engine with a query (Google's
