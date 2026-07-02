@@ -168,34 +168,39 @@ final class UsageStore: ObservableObject {
     func productivitySplit(for dayKey: String) -> (productive: Double, unproductive: Double, other: Double) {
         guard let day = days[dayKey] else { return (0, 0, 0) }
         var p = 0.0, u = 0.0, o = 0.0
-        var browserSeconds = 0.0
+        // A browser is never tagged itself — its time is judged only by the sites you
+        // actually visit. Browser time on tabs with no site (a new/empty tab, an
+        // internal page, browsing before Automation was granted) is left out of the
+        // split entirely, so an empty tab never lands in Other. It still counts
+        // toward the day's total (see `totalSeconds`).
         for stat in day.apps.values
         where !excludedApps.contains(stat.bundleID) && !SystemApps.isBlocked(stat.bundleID) {
-            if BrowserURLReader.isBrowser(stat.bundleID) {
-                browserSeconds += stat.seconds   // represented by its sites below
-                continue
-            }
+            if BrowserURLReader.isBrowser(stat.bundleID) { continue }
             switch appTags[stat.bundleID] {
             case .productive: p += stat.seconds
             case .unproductive: u += stat.seconds
             case .none: o += stat.seconds
             }
         }
-        var siteSeconds = 0.0
         for stat in day.sites.values where !excludedSites.contains(stat.domain) {
-            siteSeconds += stat.seconds
             switch siteTags[stat.domain] {
             case .productive: p += stat.seconds
             case .unproductive: u += stat.seconds
             case .none: o += stat.seconds
             }
         }
-        // Browser time on tabs with no resolvable domain (a new/empty tab, an
-        // internal page, or any browsing before Automation permission is granted)
-        // is never attributed to a site — count that residual as Other so the
-        // donut total reflects all focused time.
-        o += max(0, browserSeconds - siteSeconds)
         return (p, u, o)
+    }
+
+    /// The day's total active time on the computer — every tracked app (browsers in
+    /// full), minus excluded/system apps. Unlike the productivity split, this counts
+    /// uncategorized browser time (empty tabs, internal pages) too, so it is the
+    /// honest "total time on the Mac" the header shows.
+    func totalSeconds(for dayKey: String) -> Double {
+        guard let day = days[dayKey] else { return 0 }
+        return day.apps.values
+            .filter { !excludedApps.contains($0.bundleID) && !SystemApps.isBlocked($0.bundleID) }
+            .reduce(0) { $0 + $1.seconds }
     }
 
     /// For each of the last `daysBack` days that has any tracked time, the category
@@ -225,9 +230,8 @@ final class UsageStore: ObservableObject {
     func lowestUnproductiveDays(limit: Int = 3, minTotal: Double = 1800) -> [Double] {
         days.keys
             .compactMap { key -> Double? in
-                let s = productivitySplit(for: key)
-                let total = s.productive + s.unproductive + s.other
-                return total >= minTotal ? s.unproductive : nil
+                guard totalSeconds(for: key) >= minTotal else { return nil }
+                return productivitySplit(for: key).unproductive
             }
             .sorted()
             .prefix(limit)
