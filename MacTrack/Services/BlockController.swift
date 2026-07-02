@@ -11,7 +11,9 @@ struct BlockRecord: Identifiable {
     let createdAt: Date
 
     var remaining: TimeInterval { max(0, endsAt.timeIntervalSinceNow) }
-    var label: String { value }
+    /// An X account block ("x.com/@handle") reads as "@handle"; everything else is
+    /// its bundle id / domain.
+    var label: String { kind == "site" ? SiteKey.display(value) : value }
 }
 
 /// Owns active blocks and the locked countdown. Enforcement (hiding apps,
@@ -101,7 +103,12 @@ final class BlockController: ObservableObject {
     /// app-side build runs fine without it.
     private func syncToAppGroup() {
         guard let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Self.appGroup) else { return }
-        let domains = activeBlocks.filter { $0.kind == "site" }.map { $0.value }
+        // Per-account X blocks ("x.com/@handle") are enforced app-side only — the
+        // hostname-based system filter can't tell accounts apart — so keep those
+        // out of the domain list the extension sees.
+        let domains = activeBlocks
+            .filter { $0.kind == "site" && !SiteKey.isAccount($0.value) }
+            .map { $0.value }
         let url = dir.appendingPathComponent("blocked-domains.json")
         if let data = try? JSONEncoder().encode(domains) {
             try? data.write(to: url, options: .atomic)

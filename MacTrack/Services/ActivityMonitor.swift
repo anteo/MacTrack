@@ -36,6 +36,10 @@ final class ActivityMonitor: ObservableObject {
     /// guard so a tick never fires more than one account read at a time.
     private var lastXAccount: String?
     private var pendingAccountFetch = false
+    /// Seconds the front tab has shown a *blocked* X account. A short grace lets you
+    /// switch to your other account before the blocked one gets bounced.
+    private var blockedXAccountSeconds = 0
+    private let accountBlockGrace = 3
 
     /// Auto-resume: after pausing, the first real mouse movement resumes tracking
     /// so a pause can never be forgotten. A short grace ignores the click that
@@ -261,11 +265,30 @@ final class ActivityMonitor: ObservableObject {
         }
         if BrowserURLReader.isBrowser(bundleID) {
             if let tab = lastTab[bundleID],
-               let domain = DomainReducer.registrableDomain(from: tab.url),
-               blocks.isSiteBlocked(domain) {
-                browserReader.blockActiveTab(bundleID: bundleID)
+               let domain = DomainReducer.registrableDomain(from: tab.url) {
+                if blocks.isSiteBlocked(domain) {
+                    browserReader.blockActiveTab(bundleID: bundleID)   // whole site blocked
+                    blockedXAccountSeconds = 0
+                } else if SiteKey.splits(domain), let handle = lastXAccount,
+                          blocks.isSiteBlocked(SiteKey.account(base: domain, handle: handle)) {
+                    // Only this X account is blocked — bounce it after a short grace so
+                    // you can switch to your other (allowed) account first.
+                    blockedXAccountSeconds += 1
+                    if blockedXAccountSeconds > accountBlockGrace {
+                        browserReader.blockActiveTab(bundleID: bundleID)
+                    }
+                } else {
+                    blockedXAccountSeconds = 0
+                }
+                // Keep the active account current so the per-account check is fresh
+                // even while idle.
+                if SiteKey.splits(domain) { refreshXAccount(bundleID: bundleID) }
+            } else {
+                blockedXAccountSeconds = 0
             }
             refreshBrowserTab(bundleID: bundleID)   // keep the tab fresh to catch navigation
+        } else {
+            blockedXAccountSeconds = 0
         }
     }
 
