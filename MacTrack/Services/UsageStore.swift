@@ -324,6 +324,31 @@ final class UsageStore: ObservableObject {
             .sorted { $0.seconds > $1.seconds }
     }
 
+    /// Your most-recently-visited sites across *all* history (newest first), so you
+    /// can block one from settings even if you haven't opened it today. Includes X
+    /// per-account keys ("x.com/@handle"). Powers the settings block picker.
+    func recentSites(limit: Int = 15) -> [UsageEntry] {
+        var lastSeen: [String: Date] = [:]
+        for day in days.values {
+            for stat in day.sites.values where !excludedSites.contains(stat.domain) {
+                let last = stat.lastActive ?? .distantPast
+                if let cur = lastSeen[stat.domain] { if last > cur { lastSeen[stat.domain] = last } }
+                else { lastSeen[stat.domain] = last }
+            }
+        }
+        return lastSeen.sorted { $0.value > $1.value }.prefix(limit).map { domain, _ in
+            UsageEntry(
+                id: "site:" + domain,
+                kind: .site(domain: domain),
+                title: SiteKey.display(domain),
+                subtitle: SiteKey.isAccount(domain) ? SiteKey.base(domain) : nil,
+                seconds: 0,
+                category: .web,
+                fraction: 0
+            )
+        }
+    }
+
     /// Non-browser apps and websites merged into one ranking, sorted by time.
     /// Browser apps (Safari, Chrome, …) are omitted on purpose: their total is
     /// just the sum of their tabs, so the individual sites represent that time —
