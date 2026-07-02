@@ -126,6 +126,28 @@ final class UsageStore: ObservableObject {
         revision &+= 1
     }
 
+    /// Reset one entry's tracked time for a single day back to zero — an accidental
+    /// one-second visit vanishes from the chart and the day's totals. Unlike "Don't
+    /// track", it does NOT exclude the entry, so time re-accumulates if you go back.
+    func resetSite(_ domain: String, for dayKey: String) {
+        days[dayKey]?.sites.removeValue(forKey: domain)
+        db?.deleteSite(domain: domain, day: dayKey)
+        clearSamples(entryID: "site:" + domain, for: dayKey)
+        revision &+= 1
+    }
+    func resetApp(_ bundleID: String, for dayKey: String) {
+        days[dayKey]?.apps.removeValue(forKey: bundleID)
+        db?.deleteApp(bundleID: bundleID, day: dayKey)
+        clearSamples(entryID: "app:" + bundleID, for: dayKey)
+        revision &+= 1
+    }
+    private func clearSamples(entryID: String, for dayKey: String) {
+        if dayKey == samplesDay { todaySamples.removeValue(forKey: entryID) }
+        pastSamples[dayKey]?.removeValue(forKey: entryID)
+        let parts = entryID.split(separator: ":", maxSplits: 1).map(String.init)
+        if parts.count == 2 { db?.deleteSamples(day: dayKey, kind: parts[0], key: parts[1]) }
+    }
+
     func excludeSite(_ domain: String) {
         excludedSites.insert(domain)
         for key in days.keys { days[key]?.sites.removeValue(forKey: domain) }

@@ -286,6 +286,18 @@ final class DatabaseStore {
 
     func deleteApp(bundleID: String) { run("DELETE FROM appUsage WHERE bundleID = ?", [.text(bundleID)]) }
     func deleteSite(domain: String) { run("DELETE FROM siteUsage WHERE domain = ?", [.text(domain)]) }
+
+    // Day-scoped deletes — for "reset today's time" on a single entry.
+    func deleteApp(bundleID: String, day: String) {
+        run("DELETE FROM appUsage WHERE bundleID = ? AND day = ?", [.text(bundleID), .text(day)])
+    }
+    func deleteSite(domain: String, day: String) {
+        run("DELETE FROM siteUsage WHERE domain = ? AND day = ?", [.text(domain), .text(day)])
+    }
+    func deleteSamples(day: String, kind: String, key: String) {
+        run("DELETE FROM usageSample WHERE day = ? AND kind = ? AND key = ?",
+            [.text(day), .text(kind), .text(key)])
+    }
     func setExclusion(kind: String, value: String) {
         run("INSERT OR IGNORE INTO exclusion(kind, value) VALUES(?, ?)", [.text(kind), .text(value)])
     }
