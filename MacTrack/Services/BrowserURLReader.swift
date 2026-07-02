@@ -126,6 +126,35 @@ final class BrowserURLReader {
         return s
     }
 
+    /// Drives X's account switcher via JavaScript to switch the active account to
+    /// `handle` — so landing on a blocked account routes you to your allowed one
+    /// instead of just bouncing. Best-effort: it opens the switcher and clicks the
+    /// matching account (found by its avatar's handle-stamped testid); if the click
+    /// misses, the switcher is left open for a manual pick. Needs "Allow JavaScript
+    /// from Apple Events" (already required for account detection).
+    func switchXAccount(bundleID: String, toHandle handle: String) {
+        guard let browser = Self.browsers[bundleID],
+              handle.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" }) else { return }
+        queue.async {
+            // No double quotes anywhere in the JS, so it embeds cleanly. Opens the
+            // switcher, then after a beat clicks the row whose avatar testid carries
+            // the target handle, climbing to the nearest clickable ancestor.
+            let js = "(function(){var t='\(handle)';var b=document.querySelector('[data-testid=SideNav_AccountSwitcher_Button]');if(!b)return;b.click();setTimeout(function(){var a=document.querySelector('[data-testid=UserAvatar-Container-'+t+']');var e=a;for(var i=0;i<7&&e;i++){var r=e.getAttribute&&e.getAttribute('role');if(r==='menuitem'||r==='button'||e.tagName==='BUTTON'){break;}e=e.parentElement;}if(e){e.click();}else if(a){a.click();}},500);})()"
+            let invoke = browser.chromium
+                ? "execute (active tab of front window) javascript \"\(js)\""
+                : "do JavaScript \"\(js)\" in current tab of front window"
+            let source = """
+            tell application "\(browser.appName)"
+                if (count of windows) is 0 then return
+                try
+                    \(invoke)
+                end try
+            end tell
+            """
+            NSAppleScript(source: source)?.executeAndReturnError(nil)
+        }
+    }
+
     /// Forces the active tab off a blocked site by loading about:blank.
     func blockActiveTab(bundleID: String) {
         guard let browser = Self.browsers[bundleID] else { return }
@@ -250,5 +279,11 @@ enum SiteKey {
     static func display(_ key: String) -> String {
         guard let r = key.range(of: mark) else { return key }
         return "@" + key[r.upperBound...]
+    }
+
+    /// The bare handle of an account key ("x.com/@elonmusk" → "elonmusk"), else nil.
+    static func handle(_ key: String) -> String? {
+        guard let r = key.range(of: mark) else { return nil }
+        return String(key[r.upperBound...])
     }
 }

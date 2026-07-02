@@ -346,6 +346,19 @@ final class UsageStore: ObservableObject {
             .sorted { $0.seconds > $1.seconds }
     }
 
+    /// Every X account handle ("SocialWiseCo") seen for a base ("x.com") across all
+    /// history — lets blocking route you from a blocked account to an allowed one.
+    func knownAccountHandles(base: String) -> [String] {
+        var handles = Set<String>()
+        for day in days.values {
+            for stat in day.sites.values
+            where SiteKey.isAccount(stat.domain) && SiteKey.base(stat.domain) == base {
+                if let h = SiteKey.handle(stat.domain) { handles.insert(h) }
+            }
+        }
+        return Array(handles)
+    }
+
     /// Your most-recently-visited sites across *all* history (newest first), so you
     /// can block one from settings even if you haven't opened it today. Only sites
     /// you've spent a real amount of time on (≥ `minTotal`, default 10 min total)
