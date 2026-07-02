@@ -29,13 +29,9 @@ struct HeaderView: View {
         store.focusSeconds(domain: monitor.currentDomain, bundleID: monitor.currentBundleID)
     }
 
-    /// The day's total time on the computer — its three productivity buckets summed,
-    /// which equals all active (non-idle) time tracked that day. Shown on the
-    /// summary pages (donut, leaderboard) and for a past day.
-    private var dayTotalSeconds: Double {
-        let s = store.productivitySplit(for: viewDay)
-        return s.productive + s.unproductive + s.other
-    }
+    /// The day's total active time on the computer (browsers counted in full,
+    /// including uncategorized tab time). Shown on the summary pages and past days.
+    private var dayTotalSeconds: Double { store.totalSeconds(for: viewDay) }
 
     /// The donut and leaderboard are day summaries; the home list is "right now".
     private var summaryPage: Bool { showOverview || showLeaderboard }

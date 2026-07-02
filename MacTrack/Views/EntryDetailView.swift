@@ -72,13 +72,9 @@ struct EntryDetailView: View {
     /// time, or — in Week view — every day's total screen time that week summed.
     private var rangeScreenTime: Double {
         if range == .week {
-            return weekBars.reduce(0.0) { sum, d in
-                let s = store.productivitySplit(for: d.key)
-                return sum + s.productive + s.unproductive + s.other
-            }
+            return weekBars.reduce(0.0) { $0 + store.totalSeconds(for: $1.key) }
         }
-        let s = store.productivitySplit(for: day)
-        return s.productive + s.unproductive + s.other
+        return store.totalSeconds(for: day)
     }
 
     /// Opening from a specific account row pre-selects it; otherwise default to
