@@ -8,6 +8,9 @@ struct SettingsView: View {
     @EnvironmentObject var loginItem: LoginItem
     @EnvironmentObject var filter: BlockFilterManager
     @EnvironmentObject var focusGuard: FocusGuard
+    @EnvironmentObject var store: UsageStore
+    @EnvironmentObject var blocks: BlockController
+    @State private var blockSearch = ""
     @AppStorage("idleThreshold") private var idleThreshold: Double = 120
     @AppStorage("chartStartHour") private var chartStartHour: Int = 8
     @AppStorage("chartEndHour") private var chartEndHour: Int = 22
@@ -123,7 +126,7 @@ struct SettingsView: View {
             case .focusGuard: focusGuardCard
             case .chart:      chartCard
             case .tracking:   trackingCard
-            case .blocking:   blockingCard
+            case .blocking:   blockingSection
             }
         }
     }
@@ -220,6 +223,97 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
         }
+    }
+
+    // MARK: Block a website (picker + search)
+
+    private var blockingSection: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.lg) {
+            blockingCard
+            VStack(alignment: .leading, spacing: 8) {
+                SectionLabel(text: "Block a website")
+                blockSearchField
+                blockList
+            }
+        }
+    }
+
+    private var blockSearchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.Ink.tertiary)
+            TextField("Search sites, or type a domain to block", text: $blockSearch)
+                .textFieldStyle(.plain).font(.rowTitle).foregroundStyle(Theme.Ink.primary)
+            if !blockSearch.isEmpty {
+                Button { blockSearch = "" } label: {
+                    Image(systemName: "xmark.circle.fill").font(.system(size: 13)).foregroundStyle(Theme.Ink.faint)
+                }.buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12).frame(height: 38)
+        .background(Theme.fill(1), in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).strokeBorder(Theme.hairline, lineWidth: 0.5))
+    }
+
+    // A definite height so the ScrollView actually expands (in a content-sized
+    // popover a ScrollView otherwise collapses to almost nothing): show up to 10
+    // rows, and scroll when there are more.
+    private let blockRowHeight: CGFloat = 44
+
+    @ViewBuilder private var blockList: some View {
+        let items = blockCandidates
+        if items.isEmpty {
+            Text("No matches — type a full domain like “instagram.com” to block it.")
+                .font(.rowMeta).foregroundStyle(Theme.Ink.tertiary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity).padding(.vertical, 22)
+        } else {
+            ScrollView {
+                VStack(spacing: 2) {
+                    ForEach(items) { entry in
+                        let domain = siteDomain(entry)
+                        BlockListRow(entry: entry, isBlocked: blocks.isSiteBlocked(domain)) { minutes in
+                            blocks.block(kind: "site", value: domain, minutes: minutes)
+                        }
+                    }
+                }
+            }
+            .frame(height: CGFloat(min(items.count, 10)) * (blockRowHeight + 2))
+        }
+    }
+
+    /// The sites shown in the picker: your 15 most recently-visited sites (or, while
+    /// searching, every matching site plus a "block this" row for a brand-new domain
+    /// you type that you've never visited).
+    private var blockCandidates: [UsageEntry] {
+        let query = blockSearch.trimmingCharacters(in: .whitespaces)
+        if query.isEmpty { return store.recentSites(limit: 15) }
+        let ql = query.lowercased()
+        let norm = normalizedDomain(query)
+        var result = store.recentSites(limit: 500).filter { e in
+            e.title.lowercased().contains(ql) || siteDomain(e).lowercased().contains(norm.isEmpty ? ql : norm)
+        }
+        if isPlausibleDomain(norm), !result.contains(where: { siteDomain($0).lowercased() == norm }) {
+            result.insert(UsageEntry(id: "site:" + norm, kind: .site(domain: norm),
+                                     title: norm, subtitle: "Not visited yet",
+                                     seconds: 0, category: .web, fraction: 0), at: 0)
+        }
+        return Array(result.prefix(30))
+    }
+
+    private func siteDomain(_ entry: UsageEntry) -> String {
+        if case .site(let d) = entry.kind { return d }
+        return ""
+    }
+    private func normalizedDomain(_ s: String) -> String {
+        var t = s.lowercased().trimmingCharacters(in: .whitespaces)
+        if let r = t.range(of: "://") { t = String(t[r.upperBound...]) }
+        if t.hasPrefix("www.") { t.removeFirst(4) }
+        if let slash = t.firstIndex(of: "/") { t = String(t[..<slash]) }
+        return t
+    }
+    private func isPlausibleDomain(_ s: String) -> Bool {
+        s.range(of: "^[a-z0-9-]+(\\.[a-z0-9-]+)+$", options: .regularExpression) != nil
     }
 
     private var focusGuardCard: some View {
@@ -592,5 +686,74 @@ private struct TestButton: View {
         )
         .animation(.easeOut(duration: 0.16), value: hovering)
         .animation(.easeOut(duration: 0.12), value: pressed)
+    }
+}
+
+// MARK: - Block picker row
+
+/// One site in the settings block picker: favicon + name (no time), with a Block
+/// menu (durations) and a right-click menu to match the home list. Shows "Blocked"
+/// when a block is already running.
+private struct BlockListRow: View {
+    let entry: UsageEntry
+    let isBlocked: Bool
+    let onBlock: (Int) -> Void
+    @State private var hovering = false
+
+    private var domain: String {
+        if case .site(let d) = entry.kind { return d }
+        return ""
+    }
+
+    var body: some View {
+        HStack(spacing: 11) {
+            FaviconView(domain: domain, size: 22)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(entry.title)
+                    .font(.rowTitle).foregroundStyle(Theme.Ink.primary)
+                    .lineLimit(1).truncationMode(.middle)
+                if let sub = entry.subtitle, !sub.isEmpty {
+                    Text(sub).font(.rowMeta).foregroundStyle(Theme.Ink.tertiary).lineLimit(1)
+                }
+            }
+            Spacer(minLength: 8)
+            if isBlocked {
+                Text("Blocked")
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(Theme.unproductive)
+            } else {
+                Menu {
+                    Button("15 minutes") { onBlock(15) }
+                    Button("30 minutes") { onBlock(30) }
+                    Button("1 hour") { onBlock(60) }
+                    Button("2 hours") { onBlock(120) }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "hand.raised.fill").font(.system(size: 9, weight: .semibold))
+                        Text("Block").font(.system(size: 11.5, weight: .semibold))
+                    }
+                    .foregroundStyle(Theme.settingsAccent)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Theme.settingsAccent.opacity(0.14), in: Capsule(style: .continuous))
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 44)
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.row, style: .continuous)
+            .fill(Color.primary.opacity(hovering ? 0.06 : 0)))
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+        .contextMenu {
+            Menu {
+                Button("15 minutes") { onBlock(15) }
+                Button("30 minutes") { onBlock(30) }
+                Button("1 hour") { onBlock(60) }
+                Button("2 hours") { onBlock(120) }
+            } label: { Label("Block…", systemImage: "hand.raised") }
+        }
     }
 }
