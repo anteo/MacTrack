@@ -106,8 +106,9 @@ struct HeaderView: View {
                 if isToday {
                     GlassIconButton(systemName: monitor.isPaused ? "play.fill" : "pause.fill",
                                     size: 26,
-                                    help: monitor.isPaused ? "Resume tracking" : "Pause tracking") {
-                        monitor.setPaused(!monitor.isPaused)
+                                    help: monitor.isPaused ? "Resume tracking" : "Pause & sleep display") {
+                        if monitor.isPaused { monitor.setPaused(false) }
+                        else { monitor.pauseAndSleepDisplay() }
                     }
                 }
                 GlassIconButton(systemName: "gearshape", size: 26, help: "Settings") {

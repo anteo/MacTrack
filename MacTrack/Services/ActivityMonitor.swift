@@ -101,6 +101,17 @@ final class ActivityMonitor: ObservableObject {
         }
     }
 
+    /// Pause tracking *and* put the display to sleep. The mouse monitor stays armed,
+    /// so the first move both wakes the screen and auto-resumes tracking. Used by the
+    /// header's Pause button.
+    func pauseAndSleepDisplay() {
+        setPaused(true)
+        let sleep = Process()
+        sleep.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+        sleep.arguments = ["displaysleepnow"]
+        try? sleep.run()
+    }
+
     // MARK: - Auto-resume on return
 
     /// Instant path: a real mouse/scroll event anywhere resumes immediately. The
