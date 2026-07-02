@@ -45,6 +45,14 @@ struct ProductivityDonut: View {
         case .site(let d): store.excludeSite(d)
         }
     }
+    /// Zero this entry's time for the viewed day (an accidental visit). Not the same
+    /// as "Don't track" — it re-accumulates if you return.
+    private func resetEntry(_ entry: UsageEntry) {
+        switch entry.kind {
+        case .app(let b): store.resetApp(b, for: day)
+        case .site(let d): store.resetSite(d, for: day)
+        }
+    }
 
     private var total: Double { productive + unproductive + other }
 
@@ -346,7 +354,8 @@ struct ProductivityDonut: View {
                                      currentTag: tag(for: item),
                                      onTag: { setTag(item, $0) },
                                      onBlock: { startBlock(item, $0) },
-                                     onExclude: { dontTrack(item) })
+                                     onExclude: { dontTrack(item) },
+                                     onReset: { resetEntry(item) })
                             .equatable()
                     }
                     if items.count > 7 {
@@ -400,6 +409,7 @@ private struct BreakdownRow: View, Equatable {
     var onTag: (ProductivityTag?) -> Void = { _ in }
     var onBlock: (Int) -> Void = { _ in }
     var onExclude: () -> Void = {}
+    var onReset: () -> Void = {}
     @State private var hovering = false
 
     // Equatable at minute/percent resolution: the once-a-second header tick must not
@@ -472,6 +482,7 @@ private struct BreakdownRow: View, Equatable {
             } label: {
                 Label("Productivity", systemImage: "chart.pie")
             }
+            Button("Reset time", systemImage: "arrow.counterclockwise") { onReset() }
             Button("Don't track", systemImage: "eye.slash", role: .destructive) { onExclude() }
         }
     }
