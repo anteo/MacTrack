@@ -17,6 +17,13 @@ struct UsageRow: View, Equatable {
 
     @State private var hovering = false
 
+    /// A browser app can't be tagged productive/unproductive — its time is judged by
+    /// the sites you visit, not the app — so we hide the Productivity option for it.
+    private var isBrowserApp: Bool {
+        if case .app(let bundleID) = entry.kind { return BrowserURLReader.isBrowser(bundleID) }
+        return false
+    }
+
     static func == (lhs: UsageRow, rhs: UsageRow) -> Bool {
         lhs.entry.id == rhs.entry.id &&
         lhs.entry.title == rhs.entry.title &&
@@ -84,18 +91,20 @@ struct UsageRow: View, Equatable {
             } label: {
                 Label("Block…", systemImage: "hand.raised")
             }
-            Menu {
-                Button { onTag(.productive) } label: {
-                    Label("Productive", systemImage: currentTag == .productive ? "checkmark" : "leaf")
+            if !isBrowserApp {
+                Menu {
+                    Button { onTag(.productive) } label: {
+                        Label("Productive", systemImage: currentTag == .productive ? "checkmark" : "leaf")
+                    }
+                    Button { onTag(.unproductive) } label: {
+                        Label("Unproductive", systemImage: currentTag == .unproductive ? "checkmark" : "minus.circle")
+                    }
+                    Button { onTag(nil) } label: {
+                        Label("Clear", systemImage: currentTag == nil ? "checkmark" : "circle")
+                    }
+                } label: {
+                    Label("Productivity", systemImage: "chart.pie")
                 }
-                Button { onTag(.unproductive) } label: {
-                    Label("Unproductive", systemImage: currentTag == .unproductive ? "checkmark" : "minus.circle")
-                }
-                Button { onTag(nil) } label: {
-                    Label("Clear", systemImage: currentTag == nil ? "checkmark" : "circle")
-                }
-            } label: {
-                Label("Productivity", systemImage: "chart.pie")
             }
             Button("Don't track", systemImage: "eye.slash", role: .destructive) { onExclude() }
         }
