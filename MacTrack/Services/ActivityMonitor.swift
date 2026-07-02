@@ -216,6 +216,10 @@ final class ActivityMonitor: ObservableObject {
         if BrowserURLReader.isBrowser(bundleID) {
             if let tab = lastTab[bundleID],
                let domain = DomainReducer.registrableDomain(from: tab.url),
+               // A search-results page is pass-through, not a destination — credit no
+               // site (its time falls into the browser's uncredited total, like a new
+               // tab), so it never lands in the productivity split.
+               !DomainReducer.isSearchResults(tab.url),
                !store.isSiteExcluded(domain) {
                 // X/Twitter time is split by the active account when we can read it;
                 // otherwise it's the bare domain like any other site.

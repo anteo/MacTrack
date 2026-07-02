@@ -194,6 +194,32 @@ enum DomainReducer {
         }
         return lastTwo
     }
+
+    /// Search-engine brands whose results pages are "pass-through", not a destination.
+    private static let searchBrands: Set<String> = [
+        "google", "bing", "duckduckgo", "yahoo", "ecosia", "startpage",
+        "yandex", "baidu", "qwant", "kagi", "brave", "aol", "ask",
+    ]
+
+    /// True for a search-*results* page — a search engine with a query (Google's
+    /// `/search?q=`, DuckDuckGo's `/?q=`, …). You pass through these on the way to a
+    /// real site, so their time isn't credited to any site (it lands in the browser's
+    /// uncredited total, out of the productivity split — like a new/empty tab). It
+    /// deliberately does NOT match a search engine's other pages: Gmail
+    /// (mail.google.com), Google Docs/Maps, etc. still count as normal sites.
+    static func isSearchResults(_ url: URL) -> Bool {
+        guard let domain = registrableDomain(from: url),
+              let brand = domain.split(separator: ".").first.map(String.init),
+              searchBrands.contains(brand) else { return false }
+        let path = url.path.lowercased()
+        if path.contains("search") || path.hasPrefix("/html") { return true }
+        // Engines that carry the query on the root path (DuckDuckGo, Google "/").
+        if path == "/" || path.isEmpty {
+            let q = url.query?.lowercased() ?? ""
+            return q.range(of: "(^|&)(q|p|query|text|wd)=", options: .regularExpression) != nil
+        }
+        return false
+    }
 }
 
 // MARK: - Per-account site keys
