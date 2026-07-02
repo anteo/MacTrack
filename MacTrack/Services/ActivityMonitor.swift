@@ -36,10 +36,12 @@ final class ActivityMonitor: ObservableObject {
     /// guard so a tick never fires more than one account read at a time.
     private var lastXAccount: String?
     private var pendingAccountFetch = false
-    /// Seconds the front tab has shown a *blocked* X account. A short grace lets you
-    /// switch to your other account before the blocked one gets bounced.
+    /// Seconds the front tab has shown a *blocked* X account. After `accountBlockGrace`
+    /// we try to auto-switch to an allowed account; if still stuck `accountSwitchWait`
+    /// seconds later (no allowed account, or the switch didn't take), we bounce.
     private var blockedXAccountSeconds = 0
-    private let accountBlockGrace = 3
+    private let accountBlockGrace = 2
+    private let accountSwitchWait = 9
 
     /// Auto-resume: after pausing, the first real mouse movement resumes tracking
     /// so a pause can never be forgotten. A short grace ignores the click that
@@ -271,10 +273,15 @@ final class ActivityMonitor: ObservableObject {
                     blockedXAccountSeconds = 0
                 } else if SiteKey.splits(domain), let handle = lastXAccount,
                           blocks.isSiteBlocked(SiteKey.account(base: domain, handle: handle)) {
-                    // Only this X account is blocked — bounce it after a short grace so
-                    // you can switch to your other (allowed) account first.
+                    // Only this X account is blocked. First try to route you to an
+                    // allowed account (drive X's account switcher); if that isn't
+                    // possible or doesn't take, bounce the tab as a last resort.
                     blockedXAccountSeconds += 1
-                    if blockedXAccountSeconds > accountBlockGrace {
+                    if blockedXAccountSeconds == accountBlockGrace,
+                       let target = unblockedXTarget(base: domain, current: handle) {
+                        browserReader.switchXAccount(bundleID: bundleID, toHandle: target)
+                    }
+                    if blockedXAccountSeconds > accountBlockGrace + accountSwitchWait {
                         browserReader.blockActiveTab(bundleID: bundleID)
                     }
                 } else {
@@ -312,6 +319,14 @@ final class ActivityMonitor: ObservableObject {
             guard let self else { return }
             self.pendingAccountFetch = false
             self.lastXAccount = handle
+        }
+    }
+
+    /// A known X account for `base` that isn't the current one and isn't blocked —
+    /// the account to route you to. Nil when there's none (then we bounce instead).
+    private func unblockedXTarget(base: String, current: String) -> String? {
+        store.knownAccountHandles(base: base).first { h in
+            h != current && !blocks.isSiteBlocked(SiteKey.account(base: base, handle: h))
         }
     }
 
