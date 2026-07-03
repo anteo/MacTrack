@@ -377,7 +377,9 @@ final class UsageStore: ObservableObject {
         }
         return lastSeen
             .filter { (total[$0.key] ?? 0) >= minTotal }
-            .sorted { $0.value > $1.value }
+            // Newest first; break ties on the same timestamp by more total time, so
+            // the ordering is stable rather than arbitrary.
+            .sorted { $0.value != $1.value ? $0.value > $1.value : (total[$0.key] ?? 0) > (total[$1.key] ?? 0) }
             .prefix(limit)
             .map { domain, _ in
             UsageEntry(
