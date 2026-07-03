@@ -460,6 +460,7 @@ private struct BreakdownRow: View, Equatable {
         }
         .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.row, style: .continuous))
         .onHover { h in withAnimation(.easeOut(duration: 0.15)) { hovering = h } }
+        .help(entry.title)   // long names truncate in the row — show the full one on hover
         .contextMenu {
             Menu {
                 Button("15 minutes") { onBlock(15) }
