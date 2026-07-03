@@ -22,7 +22,7 @@ Most time trackers are heavy, paid, and want your data. MacTrack is the opposite
 - **Drill into any row.** Click an app or site to open its detail — a bar chart of when the time went (per hour across the day, or per day across the week) in its own brand color, with its share of your day, or your whole week, called out.
 - **Glanceable totals.** The menu bar shows live time for whatever you are on right now. Open the popover for the full breakdown.
 - **Right-click to ignore.** Don't want something tracked? Right-click any row and choose "Don't track." It disappears and stays gone.
-- **A productivity score.** Tag any app or site as productive or unproductive (right-click → **Productivity**). MacTrack rolls your day into a Productive / Unproductive / Other donut so you see your focus at a glance; anything untagged counts as Other.
+- **A productivity score.** Tag any app or site as productive or unproductive (right-click → **Productivity**). MacTrack rolls your day into a Productive / Unproductive / Other donut so you see your focus at a glance; anything untagged counts as Other. Browsers themselves are never judged — only the sites you actually visit are, so an empty tab or a search-results page you pass through never lands in the split (it still counts toward your total time).
 - **A history you can scrub.** A GitHub-style activity grid colors each past day by what dominated it — productive, unproductive, or other. Click any day to rewind the whole popover — donut, ranked list, and chart — to that day's data.
 - **Block distractions.** Right-click anything and block it for 15 minutes to 2 hours. While a block is live there is no off switch — a locked countdown, plus app-hiding and tab-bouncing, keeps you out until it expires. An optional **system-level filter** (a signed Network Extension) makes it DoH-proof and keeps working even if you quit MacTrack — see [SETUP_BLOCKING.md](SETUP_BLOCKING.md).
 - **Good-night mode.** One tap stops tracking for the night and auto-resumes at the wake time you set, so late-night idle never skews your day.
@@ -31,6 +31,8 @@ Most time trackers are heavy, paid, and want your data. MacTrack is the opposite
 ## Focus & productivity
 
 Right-click any app or website and mark it **Productive** or **Unproductive**. The pie-chart toggle in the header flips the popover to a productivity overview — one donut splitting your day into Productive / Unproductive / Other, with the productive share called out in the middle. Untagged time is Other, so the picture is honest from day one.
+
+A browser is judged only by the **sites** you visit, never as an app — so a new/empty tab, an internal page, or a search-results page (Google, DuckDuckGo, Bing, …) you pass through on the way somewhere is left out of the split entirely and can't inflate Other. That time still counts toward your total, so the number above the donut stays honest.
 
 <p align="center">
   <img src="docs/donut.png" width="300" alt="Productivity overview donut" />
