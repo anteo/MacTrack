@@ -25,6 +25,7 @@ Most time trackers are heavy, paid, and want your data. MacTrack is the opposite
 - **Right-click to ignore.** Don't want something tracked? Right-click any row and choose "Don't track." It disappears and stays gone.
 - **A productivity score.** Tag any app or site as productive or unproductive (right-click → **Productivity**). MacTrack rolls your day into a Productive / Unproductive / Other donut so you see your focus at a glance; anything untagged counts as Other. Browsers themselves are never judged — only the sites you actually visit are, so an empty tab or a search-results page you pass through never lands in the split (it still counts toward your total time).
 - **A history you can scrub.** A GitHub-style activity grid colors each past day by what dominated it — productive, unproductive, or other. Click any day to rewind the whole popover — donut, ranked list, and chart — to that day's data.
+- **A best-days leaderboard.** A trophy button ranks the days you spent the **least** time on unproductive things — so you can see your best days at a glance (only completed days count, so today never gets crowned mid-progress).
 - **Block distractions.** Right-click anything and block it for 15 minutes to 2 hours — or open **Settings → Blocking** to search any site (even one you've never visited) and block it there. While a block is live there is no off switch — a locked countdown, plus app-hiding and tab-bouncing, keeps you out until it expires. An optional **system-level filter** (a signed Network Extension) makes it DoH-proof and keeps working even if you quit MacTrack — see [SETUP_BLOCKING.md](SETUP_BLOCKING.md).
 - **Block one X account, keep the other.** Block just your doomscroll account and MacTrack notices when it's the active one and **auto-switches you to your allowed account**; the other one keeps working normally.
 - **Good-night mode.** One tap stops tracking for the night and auto-resumes at the wake time you set, so late-night idle never skews your day.
@@ -50,6 +51,10 @@ Click any day's square to **rewind the whole popover to that day**: the donut, t
 <p align="center">
   <img src="docs/activity.png" width="300" alt="Activity grid colored by each day's dominant category" />
 </p>
+
+### Best days
+
+A **trophy button** next to the pie-chart button opens a leaderboard of your **least-distracted days** — your top three days ranked by the *least* time spent on unproductive apps and sites, showing the amount (not the date). Only completed days you actually used count, so a quiet day you barely touched the Mac — or today, still in progress — can't sneak to the top. It reuses the home list's exact rows, so it feels of a piece with the rest of the popover.
 
 ### Drill into any app or site
 
