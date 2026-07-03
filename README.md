@@ -135,7 +135,7 @@ To measure per-website time, MacTrack reads the active tab's address through mac
 
 ## Settings
 
-Open settings from the gear in the popover. It opens to a **home that groups everything into categories** — General, Good Night, Focus Guard, Chart, Website Tracking, and Blocking — and you tap one to drill into just its controls, so no screen runs off the bottom: launch at login and the idle timeout; your good-night **wake time**; the chart's start and end hours; website-tracking permission; the system-level blocking toggle; and **Focus Guard** — switch it on, set how long counts as too long, tick the quote collections to draw from, and play a Test of the blur.
+Open settings from the gear in the popover. It opens to a **home that groups everything into categories** — General, Good Night, Focus Guard, Chart, Website Tracking, and Blocking — and you tap one to drill into just its controls, so no screen runs off the bottom: launch at login and the idle timeout; your good-night **wake time**; website-tracking permission; **Focus Guard** (switch it on, set how long counts as too long, tick the quote collections, and play a Test of the blur); and **Blocking** — the system-level filter toggle plus a **block-a-website picker**: your recent sites, each blockable on the spot, and a search box to find any site you've visited or type a new domain to block.
 
 <p align="center">
   <img src="docs/settings.png" width="280" alt="Settings" />
@@ -143,7 +143,7 @@ Open settings from the gear in the popover. It opens to a **home that groups eve
 
 ## How it works
 
-A once-a-second sampler measures the real elapsed time between ticks and credits it to whatever is in focus: the frontmost app, and the active tab's domain if that app is a browser. Large gaps (sleep, wake) are dropped, and idle or locked time is skipped. Totals roll up per day; a lightweight per-minute series powers the chart. Writes are incremental and crash-safe (SQLite WAL), with daily backups and automatic restore.
+A once-a-second sampler measures the real elapsed time between ticks and credits it to whatever is in focus: the frontmost app, and the active tab's domain if that app is a browser. Large gaps (sleep, wake) are dropped, and idle or locked time is skipped — so the first and last credited minute of a day mark when you actually started and stopped, which is what the chart's active window and your total time are drawn from. New/empty tabs and search-results pages are credited to no site, so they stay out of the productivity split while still counting toward the total. Totals roll up per day; a lightweight per-minute series powers the chart. Writes are incremental and crash-safe (SQLite WAL), with daily backups and automatic restore.
 
 ## Tech
 
