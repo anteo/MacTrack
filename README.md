@@ -19,7 +19,8 @@ Most time trackers are heavy, paid, and want your data. MacTrack is the opposite
 - **Apps, Websites, and All.** Toggle between just apps, just sites, or one merged ranking sorted by time. In the merged view the browser app drops out so its individual sites tell the real story.
 - **A clean daily line chart.** The top items plotted across your day in each app or site's own brand color, with a hover scrubber for exact values. The chart spans your **real active window** — from the first activity when you wake the Mac to your last — instead of a fixed schedule.
 - **Your true total time.** The productivity overview headlines your **total active time on the Mac** for the day, measured from your first move; the home list keeps the live "what you're on right now" readout at the top instead.
-- **Drill into any row.** Click an app or site to open its detail — a bar chart of when the time went (per hour across the day, or per day across the week) in its own brand color, with its share of your day, or your whole week, called out.
+- **Drill into any row.** Click an app or site to open its detail — a bar chart of when the time went, toggled between **Day** (per hour), **Week**, and **Month** (per day), in its own brand color, with its share of your day, week, or month called out.
+- **Reset an accidental visit.** Opened something for a second by mistake? On the productivity donut, drill into a slice and right-click the item → **Reset time** zeroes it for the day so it drops off the graph. It's not "don't track" — time re-accumulates if you go back.
 - **Glanceable totals.** The menu bar shows live time for whatever you are on right now. Open the popover for the full breakdown.
 - **Right-click to ignore.** Don't want something tracked? Right-click any row and choose "Don't track." It disappears and stays gone.
 - **A productivity score.** Tag any app or site as productive or unproductive (right-click → **Productivity**). MacTrack rolls your day into a Productive / Unproductive / Other donut so you see your focus at a glance; anything untagged counts as Other. Browsers themselves are never judged — only the sites you actually visit are, so an empty tab or a search-results page you pass through never lands in the split (it still counts toward your total time).
@@ -51,7 +52,7 @@ Click any day's square to **rewind the whole popover to that day**: the donut, t
 
 ### Drill into any app or site
 
-Click any row to open its detail: a bar chart of exactly when the time went — minute-by-hour across the day, or totalled per day across the week — drawn in the app or site's **own brand color**, pulled live from its icon or favicon (Safari's blue, YouTube's red). The header calls out its share of your screen time: **% of today** in the day view, or **% of the whole week** in the week view.
+Click any row to open its detail: a bar chart of exactly when the time went, with a **Day / Week / Month** toggle — minute-by-hour across the day, or totalled per day across the week or the whole month — drawn in the app or site's **own brand color**, pulled live from its icon or favicon (Safari's blue, YouTube's red). The header calls out its share of your screen time: **% of today**, **% of the week**, or **% of the month** to match.
 
 <p align="center">
   <img src="docs/detail.png" width="300" alt="An app's detail: hourly bar chart in its brand color, with its share of the day" />
