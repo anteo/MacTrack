@@ -536,6 +536,20 @@ final class UsageStore: ObservableObject {
         }
     }
 
+    /// Per-day totals for every day of the viewed day's calendar month — powers the
+    /// detail's Month bar chart.
+    func monthlyTotals(entryID: String, month dayKey: String) -> [(key: String, date: Date, seconds: Double)] {
+        let cal = Calendar.current
+        let base = DayKey.date(from: dayKey) ?? Date()
+        let start = cal.dateInterval(of: .month, for: base)?.start ?? cal.startOfDay(for: base)
+        let count = cal.range(of: .day, in: .month, for: base)?.count ?? 30
+        return (0..<count).map { i in
+            let d = cal.date(byAdding: .day, value: i, to: start) ?? start
+            let k = DayKey.key(for: d)
+            return (k, d, entrySeconds(entryID: entryID, for: k))
+        }
+    }
+
     /// Category breakdown (today) — kept for future use.
     func ribbonSegments(for dayKey: String) -> [(category: ActivityCategory, seconds: Double)] {
         guard let day = days[dayKey] else { return [] }

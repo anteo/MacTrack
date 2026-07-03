@@ -51,16 +51,22 @@ struct EntryDetailView: View {
     private var weekBars: [(key: String, date: Date, seconds: Double)] {
         store.weeklyTotals(entryID: chartEntryID, week: day)
     }
+    private var monthBars: [(key: String, date: Date, seconds: Double)] {
+        store.monthlyTotals(entryID: chartEntryID, month: day)
+    }
 
     // Header follows the slider: "All" shows the x.com total, an account its own.
     private var titleText: String {
         guard isXSwitcher else { return entry.title }
         return selectedAccount.isEmpty ? "x.com" : SiteKey.display(selectedAccount)
     }
-    /// The entry's total for the active range: the viewed day, or the week's sum.
+    /// The entry's total for the active range: the viewed day, the week, or the month.
     private var totalSeconds: Double {
-        if range == .week { return weekBars.reduce(0) { $0 + $1.seconds } }
-        return dayTotalSeconds
+        switch range {
+        case .day: return dayTotalSeconds
+        case .week: return weekBars.reduce(0) { $0 + $1.seconds }
+        case .month: return monthBars.reduce(0) { $0 + $1.seconds }
+        }
     }
     private var dayTotalSeconds: Double {
         guard isXSwitcher else { return entry.seconds }
@@ -71,10 +77,11 @@ struct EntryDetailView: View {
     /// What the header percentage is measured against: the viewed day's total screen
     /// time, or — in Week view — every day's total screen time that week summed.
     private var rangeScreenTime: Double {
-        if range == .week {
-            return weekBars.reduce(0.0) { $0 + store.totalSeconds(for: $1.key) }
+        switch range {
+        case .day: return store.totalSeconds(for: day)
+        case .week: return weekBars.reduce(0.0) { $0 + store.totalSeconds(for: $1.key) }
+        case .month: return monthBars.reduce(0.0) { $0 + store.totalSeconds(for: $1.key) }
         }
-        return store.totalSeconds(for: day)
     }
 
     /// Opening from a specific account row pre-selects it; otherwise default to
@@ -115,20 +122,22 @@ struct EntryDetailView: View {
             Rectangle().fill(Theme.hairline).frame(height: 0.5).padding(.top, 14)
 
             HStack(spacing: 8) {
-                SectionLabel(text: range == .day ? "Minutes per hour" : "Total per day")
-                Spacer()
+                SectionLabel(text: range == .day ? "Per hour" : "Per day")
+                    .lineLimit(1)
+                Spacer(minLength: 6)
                 DayWeekToggle(selection: $range)
             }
             .padding(.top, 14)
             .padding(.bottom, 8)
 
             ZStack {
-                if range == .day {
-                    HourBarChart(bars: bars, color: barColor)
-                        .transition(.opacity)
-                } else {
-                    WeekBarChart(days: weekBars, viewedDay: day, color: barColor)
-                        .transition(.opacity)
+                switch range {
+                case .day:
+                    HourBarChart(bars: bars, color: barColor).transition(.opacity)
+                case .week:
+                    WeekBarChart(days: weekBars, viewedDay: day, color: barColor).transition(.opacity)
+                case .month:
+                    MonthBarChart(days: monthBars, viewedDay: day, color: barColor).transition(.opacity)
                 }
             }
             .id(chartEntryID)   // switching accounts re-draws the chart for that one
@@ -204,8 +213,11 @@ struct EntryDetailView: View {
     }
 
     private var percentLabel: String {
-        if range == .week { return "of week" }
-        return day == DayKey.today ? "of today" : "of that day"
+        switch range {
+        case .week: return "of week"
+        case .month: return "of month"
+        case .day: return day == DayKey.today ? "of today" : "of that day"
+        }
     }
 
     @ViewBuilder private var icon: some View {
@@ -372,7 +384,7 @@ private struct HourBarChart: View {
 // MARK: - Day / Week toggle
 
 enum DetailRange: String, CaseIterable, Identifiable {
-    case day = "Day", week = "Week"
+    case day = "Day", week = "Week", month = "Month"
     var id: String { rawValue }
 }
 
@@ -389,8 +401,10 @@ private struct DayWeekToggle: View {
                     Text(r.rawValue)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(sel ? Theme.Ink.primary : Theme.Ink.tertiary)
+                        .lineLimit(1)
+                        .fixedSize()
                         .padding(.vertical, 5)
-                        .padding(.horizontal, 13)
+                        .padding(.horizontal, 10)
                         .background {
                             if sel {
                                 Capsule(style: .continuous)
@@ -406,6 +420,7 @@ private struct DayWeekToggle: View {
         }
         .padding(3)
         .background(Theme.fill(0), in: Capsule(style: .continuous))
+        .fixedSize()
     }
 }
 
@@ -534,6 +549,141 @@ private struct WeekBarChart: View {
         let f = DateFormatter(); f.dateFormat = "EEE, MMM d"; return f
     }()
     private func dayLabel(_ d: Date) -> String { Self.dayFmt.string(from: d) }
+}
+
+// MARK: - Month chart
+
+/// One thin bar per day of the viewed month, each the total time on this app/site
+/// that day. Auto-scaled to the busiest day; the viewed day's bar is emphasized,
+/// and only a few date labels are drawn so it stays readable across ~30 bars.
+private struct MonthBarChart: View {
+    let days: [(key: String, date: Date, seconds: Double)]
+    let viewedDay: String
+    let color: Color
+
+    @State private var hovered: Int? = nil
+    @State private var appeared = false
+
+    private let height: CGFloat = 150
+    private let labelH: CGFloat = 15
+    private let topPad: CGFloat = 14
+
+    private var maxSeconds: Double { max(1, days.map(\.seconds).max() ?? 1) }
+
+    /// Draw the day number only for the 1st, every 5th, the last day, and the viewed
+    /// day — enough to orient without crowding ~30 bars.
+    private var labelIndices: Set<Int> {
+        var set = Set<Int>()
+        for (i, d) in days.enumerated() {
+            let n = Calendar.current.component(.day, from: d.date)
+            if n == 1 || n % 5 == 0 { set.insert(i) }
+            if d.key == viewedDay { set.insert(i) }
+        }
+        if let last = days.indices.last { set.insert(last) }
+        return set
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let plotH = height - labelH - topPad
+            let n = max(1, days.count)
+            let slot = w / CGFloat(n)
+            let barW = max(3, min(slot - 1.5, 9))
+
+            ZStack(alignment: .topLeading) {
+                ForEach([0.0, 0.5, 1.0], id: \.self) { f in
+                    let y = topPad + plotH * CGFloat(1 - f)
+                    Path { p in
+                        p.move(to: CGPoint(x: 0, y: y))
+                        p.addLine(to: CGPoint(x: w, y: y))
+                    }
+                    .stroke(Theme.hairline, lineWidth: 0.5)
+                }
+
+                ForEach(days.indices, id: \.self) { i in
+                    bar(i: i, slot: slot, barW: barW, plotH: plotH)
+                }
+
+                ForEach(Array(labelIndices).sorted(), id: \.self) { i in
+                    Text("\(Calendar.current.component(.day, from: days[i].date))")
+                        .font(.system(size: 8, weight: days[i].key == viewedDay ? .bold : .medium))
+                        .foregroundStyle(days[i].key == viewedDay ? color : Theme.Ink.faint)
+                        .fixedSize()
+                        .position(x: slot * (CGFloat(i) + 0.5), y: height - 6)
+                }
+
+                if let i = hovered, i < days.count {
+                    tooltip(i: i, slot: slot, w: w)
+                }
+            }
+            .contentShape(Rectangle())
+            .onContinuousHover { phase in
+                switch phase {
+                case .active(let p):
+                    let i = Int(p.x / slot)
+                    hovered = (i >= 0 && i < days.count) ? i : nil
+                case .ended:
+                    hovered = nil
+                }
+            }
+        }
+        .frame(height: height)
+        .onAppear { appeared = true }
+    }
+
+    @ViewBuilder
+    private func bar(i: Int, slot: CGFloat, barW: CGFloat, plotH: CGFloat) -> some View {
+        let hot = hovered == i
+        let isViewed = days[i].key == viewedDay
+        let secs = days[i].seconds
+        let has = secs > 0
+        let frac = min(1, secs / maxSeconds)
+        let full = max(has ? 2.5 : 1.5, plotH * CGFloat(frac))
+        let h = appeared ? full : 0
+        let x = slot * (CGFloat(i) + 0.5)
+        let width = hot ? barW + 1.5 : barW
+        let topR = min(3, h / 2)
+        UnevenRoundedRectangle(topLeadingRadius: topR, bottomLeadingRadius: 1.5,
+                               bottomTrailingRadius: 1.5, topTrailingRadius: topR,
+                               style: .continuous)
+            .fill(color.opacity(has ? (hot || isViewed ? 1 : 0.82) : 0.14))
+            .frame(width: width, height: h)
+            .position(x: x, y: topPad + plotH - h / 2)
+            .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.24), value: hot)
+            .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.5)
+                .delay(Double(i) * 0.012), value: appeared)
+            .zIndex(hot ? 1 : 0)
+    }
+
+    private func tooltip(i: Int, slot: CGFloat, w: CGFloat) -> some View {
+        let half: CGFloat = 60
+        let x = min(max(half, slot * (CGFloat(i) + 0.5)), w - half)
+        let secs = days[i].seconds
+        return HStack(spacing: 5) {
+            Text(Self.dayFmt.string(from: days[i].date))
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Theme.Ink.secondary)
+            Text("·")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Theme.Ink.faint)
+            Text(secs > 0 ? Format.duration(secs) : "0m")
+                .font(.system(size: 11.5, weight: .bold).monospacedDigit())
+                .foregroundStyle(secs > 0 ? color : Theme.Ink.secondary)
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 6)
+        .glassControl(interactive: false)
+        .shadow(color: .black.opacity(0.30), radius: 10, y: 3)
+        .fixedSize()
+        .position(x: x, y: topPad + 8)
+        .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.18), value: hovered)
+        .transition(.opacity)
+    }
+
+    private static let dayFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE, MMM d"; return f
+    }()
 }
 
 // MARK: - Account switcher
