@@ -17,7 +17,8 @@ Most time trackers are heavy, paid, and want your data. MacTrack is the opposite
 - **Splits your X accounts.** Run more than one X account? MacTrack reads which one is active straight from the page and tracks each on its own row, so the account you doomscroll and the one you use for work never blur together.
 - **Knows when you step away.** Tracking pauses when you go idle or lock the screen, so a coffee break never lands on whatever you left open.
 - **Apps, Websites, and All.** Toggle between just apps, just sites, or one merged ranking sorted by time. In the merged view the browser app drops out so its individual sites tell the real story.
-- **A clean daily line chart.** The top items plotted across your day, with a hover scrubber for exact values. Set the chart's start and end hours in settings. Each line is drawn in the app or site's own brand color.
+- **A clean daily line chart.** The top items plotted across your day in each app or site's own brand color, with a hover scrubber for exact values. The chart spans your **real active window** — from the first activity when you wake the Mac to your last — instead of a fixed schedule.
+- **Your true total time.** The productivity overview headlines your **total active time on the Mac** for the day, measured from your first move; the home list keeps the live "what you're on right now" readout at the top instead.
 - **Drill into any row.** Click an app or site to open its detail — a bar chart of when the time went (per hour across the day, or per day across the week) in its own brand color, with its share of your day, or your whole week, called out.
 - **Glanceable totals.** The menu bar shows live time for whatever you are on right now. Open the popover for the full breakdown.
 - **Right-click to ignore.** Don't want something tracked? Right-click any row and choose "Don't track." It disappears and stays gone.
