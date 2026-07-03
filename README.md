@@ -25,7 +25,8 @@ Most time trackers are heavy, paid, and want your data. MacTrack is the opposite
 - **Right-click to ignore.** Don't want something tracked? Right-click any row and choose "Don't track." It disappears and stays gone.
 - **A productivity score.** Tag any app or site as productive or unproductive (right-click → **Productivity**). MacTrack rolls your day into a Productive / Unproductive / Other donut so you see your focus at a glance; anything untagged counts as Other. Browsers themselves are never judged — only the sites you actually visit are, so an empty tab or a search-results page you pass through never lands in the split (it still counts toward your total time).
 - **A history you can scrub.** A GitHub-style activity grid colors each past day by what dominated it — productive, unproductive, or other. Click any day to rewind the whole popover — donut, ranked list, and chart — to that day's data.
-- **Block distractions.** Right-click anything and block it for 15 minutes to 2 hours. While a block is live there is no off switch — a locked countdown, plus app-hiding and tab-bouncing, keeps you out until it expires. An optional **system-level filter** (a signed Network Extension) makes it DoH-proof and keeps working even if you quit MacTrack — see [SETUP_BLOCKING.md](SETUP_BLOCKING.md).
+- **Block distractions.** Right-click anything and block it for 15 minutes to 2 hours — or open **Settings → Blocking** to search any site (even one you've never visited) and block it there. While a block is live there is no off switch — a locked countdown, plus app-hiding and tab-bouncing, keeps you out until it expires. An optional **system-level filter** (a signed Network Extension) makes it DoH-proof and keeps working even if you quit MacTrack — see [SETUP_BLOCKING.md](SETUP_BLOCKING.md).
+- **Block one X account, keep the other.** Block just your doomscroll account and MacTrack notices when it's the active one and **auto-switches you to your allowed account**; the other one keeps working normally.
 - **Good-night mode.** One tap stops tracking for the night and auto-resumes at the wake time you set, so late-night idle never skews your day.
 - **Focus Guard.** Linger too long on something you've tagged unproductive and MacTrack frosts the whole screen with a quote — a line of discipline from Stoics, conquerors, founders, and investors — set in a serif card that writes itself in word by word. It clears the moment you switch away; a quiet link to get back to work waits at the bottom and only appears once you pause and click. Pick which quote collections feed it and how long "too long" is in settings.
 
@@ -76,6 +77,10 @@ Need to lock yourself out of something? Right-click any app or site, choose **Bl
 </p>
 
 That app-side layer can be dodged by force-quitting MacTrack. For a bulletproof, system-wide block — a signed **Network Extension** content filter, DoH-proof and enforced by macOS itself even when MacTrack isn't running — see **[SETUP_BLOCKING.md](SETUP_BLOCKING.md)**. It needs your own Apple Developer signing, so it ships as code plus a step-by-step guide.
+
+**Block from settings, no visit required.** You can't right-click a site you haven't opened today — so **Settings → Blocking** has a picker of your recently-used sites (each blockable right there) and a search box to find *any* site you've ever been on, or to type a brand-new domain and block it on the spot.
+
+**Per-account X blocking.** Since both of your X accounts share `x.com`, a domain block can't tell them apart — so MacTrack reads the *active* account from the page and blocks only the one you chose. Even better: when you land on the blocked account, it drives X's account switcher to **route you onto your allowed account automatically**, and only bounces the tab as a fallback if there's nowhere to switch to. (Per-account enforcement is app-side; it needs the same "Allow JavaScript from Apple Events" toggle the account tracking uses.)
 
 ## Focus Guard
 
