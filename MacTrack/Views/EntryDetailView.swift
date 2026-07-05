@@ -19,10 +19,18 @@ struct EntryDetailView: View {
     @State private var barColor: Color = Theme.focus
     /// For X (an account-split site): the account whose chart + tag are shown.
     @State private var selectedAccount: String = ""
+    /// For a browser app: the websites that make up its time, each in its own
+    /// favicon brand color, resolved async for the donut under the bar chart.
+    @State private var siteSlices: [SiteBreakdownDonut.Slice] = []
 
     private var entryDomain: String? {
         if case .site(let d) = entry.kind { return d }
         return nil
+    }
+    /// A browser app (Safari, Chrome, …) — the only entry that gets the per-site donut.
+    private var isBrowserApp: Bool {
+        if case .app(let b) = entry.kind { return BrowserURLReader.isBrowser(b) }
+        return false
     }
     /// The X/Twitter base ("x.com") if this entry is one of its rows, else nil.
     private var xBase: String? {
@@ -91,6 +99,25 @@ struct EntryDetailView: View {
         if let d = entryDomain, SiteKey.isAccount(d) { selectedAccount = d }
     }
 
+    /// The websites that make up this browser's day, as donut slices: the top sites
+    /// by time (each in its resolved favicon brand color) plus an "Other sites"
+    /// remainder, with adjacent colors forced apart so no two arcs look the same.
+    private func resolveSiteSlices() async -> [SiteBreakdownDonut.Slice] {
+        let sites = store.siteEntries(for: day, minSeconds: 30)
+        guard !sites.isEmpty else { return [] }
+        let topN = 7
+        var out: [SiteBreakdownDonut.Slice] = []
+        for s in sites.prefix(topN) {
+            let color = await IconColor.resolve(for: s)
+            out.append(.init(id: s.id, name: s.title, seconds: s.seconds, color: color))
+        }
+        let rest = sites.dropFirst(topN).reduce(0.0) { $0 + $1.seconds }
+        if rest > 30 {
+            out.append(.init(id: "other", name: "Other sites", seconds: rest, color: Theme.neutralSlice))
+        }
+        return SiteBreakdownDonut.distinctColors(out)
+    }
+
     /// A standalone "All" button (separate from the account slider) that shows the
     /// aggregate x.com total.
     private var allButton: some View {
@@ -143,9 +170,26 @@ struct EntryDetailView: View {
             .id(chartEntryID)   // switching accounts re-draws the chart for that one
             .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.25), value: range)
 
+            // A browser's time is really its websites — show them as a donut in the
+            // same style as the productivity ring, each slice its own brand color.
+            if isBrowserApp && !siteSlices.isEmpty {
+                Rectangle().fill(Theme.hairline).frame(height: 0.5).padding(.top, 16)
+                HStack {
+                    SectionLabel(text: "Websites")
+                    Spacer()
+                }
+                .padding(.top, 14).padding(.bottom, 4)
+                SiteBreakdownDonut(slices: siteSlices)
+                    .padding(.top, 4)
+            }
+
             if isUnsplitX {
                 xAccountHint.padding(.top, 16)
             }
+        }
+        .task(id: "\(entry.id)-\(day)") {
+            guard isBrowserApp else { return }
+            siteSlices = await resolveSiteSlices()
         }
         .onAppear { initSelection(); onReadout(titleText, totalSeconds) }
         .onChange(of: selectedAccount) { onReadout(titleText, totalSeconds) }
