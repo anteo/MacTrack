@@ -156,6 +156,19 @@ final class UsageStore: ObservableObject {
         revision &+= 1
     }
 
+    /// Undo "Don't track" — start tracking the app/site again going forward. (The
+    /// history removed when it was excluded doesn't come back; new time accrues.)
+    func includeApp(_ bundleID: String) {
+        excludedApps.remove(bundleID)
+        db?.clearExclusion(kind: "app", value: bundleID)
+        revision &+= 1
+    }
+    func includeSite(_ domain: String) {
+        excludedSites.remove(domain)
+        db?.clearExclusion(kind: "site", value: domain)
+        revision &+= 1
+    }
+
     // MARK: Productivity tags
 
     func appTag(_ bundleID: String) -> ProductivityTag? { appTags[bundleID] }

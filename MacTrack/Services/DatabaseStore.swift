@@ -301,6 +301,9 @@ final class DatabaseStore {
     func setExclusion(kind: String, value: String) {
         run("INSERT OR IGNORE INTO exclusion(kind, value) VALUES(?, ?)", [.text(kind), .text(value)])
     }
+    func clearExclusion(kind: String, value: String) {
+        run("DELETE FROM exclusion WHERE kind = ? AND value = ?", [.text(kind), .text(value)])
+    }
 
     // MARK: Blocks
 
