@@ -12,12 +12,19 @@ struct SiteBreakdownDonut: View {
         let name: String
         let seconds: Double
         var color: Color        // var so the distinctness pass can nudge it
+        var drillable: Bool = true   // "Other sites" has no single per-hour series
     }
 
     let slices: [Slice]
+    /// Per-hour minutes for a tapped slice, so tapping a website swaps the legend for
+    /// that site's hourly bar chart. Supplied by the parent (which owns the store).
+    var hourlyBars: (Slice) -> [(hour: Int, minutes: Double)] = { _ in [] }
 
     @State private var hovered: Int? = nil
+    @State private var selected: Int? = nil
     @State private var cursorActive = false
+
+    private let drillCurve: Animation = .timingCurve(0.22, 1, 0.36, 1, duration: 0.3)
 
     private let lineWidth: CGFloat = 14
     private let hoverWidth: CGFloat = 18
@@ -33,8 +40,18 @@ struct SiteBreakdownDonut: View {
                 .frame(width: 184, height: 184)
                 .contentShape(Rectangle())
                 .onContinuousHover(coordinateSpace: .local) { handleHover($0) }
+                .onTapGesture { tapRing() }
                 .onDisappear { if cursorActive { NSCursor.pop(); cursorActive = false } }
-            legend
+
+            // Tap a slice to swap the legend for that site's per-hour bar chart.
+            ZStack {
+                if let sel = selected, sel < slices.count {
+                    drill(sel).id(sel).transition(.opacity)
+                } else {
+                    legend.transition(.opacity)
+                }
+            }
+            .animation(drillCurve, value: selected)
         }
         .frame(maxWidth: .infinity)
     }
@@ -58,7 +75,7 @@ struct SiteBreakdownDonut: View {
         }
         return ZStack {
             ForEach(Array(arcs.enumerated()), id: \.offset) { _, arc in
-                let hot = hovered == arc.index
+                let hot = hovered == arc.index || selected == arc.index
                 Circle()
                     .trim(from: arc.from, to: arc.to)
                     .stroke(arc.color, style: StrokeStyle(lineWidth: hot ? hoverWidth : lineWidth, lineCap: .round))
@@ -89,7 +106,7 @@ struct SiteBreakdownDonut: View {
 
     private var center: some View {
         VStack(spacing: 1) {
-            if let i = hovered, i < slices.count, total > 0 {
+            if let i = hovered ?? selected, i < slices.count, total > 0 {
                 Text("\(pct[i])%")
                     .font(.system(size: 30, weight: .semibold)).monospacedDigit()
                     .foregroundStyle(Theme.Ink.primary)
@@ -108,6 +125,39 @@ struct SiteBreakdownDonut: View {
             }
         }
         .animation(.smooth(duration: 0.3), value: hovered)
+        .animation(.smooth(duration: 0.3), value: selected)
+    }
+
+    /// The drilled-in view: a back header (chevron + site + its %/time) over the
+    /// site's per-hour bar chart, in the site's own color.
+    private func drill(_ i: Int) -> some View {
+        let s = slices[i]
+        return VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Button {
+                    withAnimation(drillCurve) { selected = nil }
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Theme.Ink.secondary)
+                        .frame(width: 22, height: 22)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(s.color).frame(width: 9, height: 9)
+                Text(s.name).font(.rowTitle).foregroundStyle(Theme.Ink.primary)
+                    .lineLimit(1).truncationMode(.middle)
+                Spacer()
+                Text("\(total > 0 ? pct[i] : 0)%")
+                    .font(.rowMeta.monospacedDigit()).foregroundStyle(Theme.Ink.tertiary)
+                Text(Format.duration(s.seconds))
+                    .font(.rowValue.monospacedDigit()).foregroundStyle(Theme.Ink.primary)
+            }
+            .padding(.bottom, 9)
+            Rectangle().fill(Theme.hairline).frame(height: 0.5).padding(.bottom, 8)
+            HourBarChart(bars: hourlyBars(s), color: s.color)
+        }
+        .padding(.horizontal, 4)
     }
 
     private var legend: some View {
@@ -131,9 +181,20 @@ struct SiteBreakdownDonut: View {
                 }
                 .opacity(hovered == nil || hovered == i ? 1 : 0.5)
                 .animation(.easeOut(duration: 0.15), value: hovered)
+                .contentShape(Rectangle())
+                .onHover { h in hovered = h ? i : (hovered == i ? nil : hovered) }
+                .onTapGesture { if s.drillable { withAnimation(drillCurve) { selected = i } } }
             }
         }
         .padding(.horizontal, 4)
+    }
+
+    private func tapRing() {
+        if let h = hovered, slices[h].drillable {
+            withAnimation(drillCurve) { selected = (selected == h) ? nil : h }
+        } else if selected != nil {
+            withAnimation(drillCurve) { selected = nil }
+        }
     }
 
     private func handleHover(_ phase: HoverPhase) {
@@ -141,8 +202,9 @@ struct SiteBreakdownDonut: View {
         case .active(let p):
             let idx = sliceIndex(at: p)
             hovered = idx
-            if idx != nil && !cursorActive { NSCursor.pointingHand.push(); cursorActive = true }
-            else if idx == nil && cursorActive { NSCursor.pop(); cursorActive = false }
+            let drillable = idx.map { slices[$0].drillable } ?? false
+            if drillable && !cursorActive { NSCursor.pointingHand.push(); cursorActive = true }
+            else if !drillable && cursorActive { NSCursor.pop(); cursorActive = false }
         case .ended:
             hovered = nil
             if cursorActive { NSCursor.pop(); cursorActive = false }

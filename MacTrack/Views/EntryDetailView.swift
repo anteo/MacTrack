@@ -113,7 +113,8 @@ struct EntryDetailView: View {
         }
         let rest = sites.dropFirst(topN).reduce(0.0) { $0 + $1.seconds }
         if rest > 30 {
-            out.append(.init(id: "other", name: "Other sites", seconds: rest, color: Theme.neutralSlice))
+            out.append(.init(id: "other", name: "Other sites", seconds: rest,
+                             color: Theme.neutralSlice, drillable: false))
         }
         return SiteBreakdownDonut.distinctColors(out)
     }
@@ -179,8 +180,11 @@ struct EntryDetailView: View {
                     Spacer()
                 }
                 .padding(.top, 14).padding(.bottom, 4)
-                SiteBreakdownDonut(slices: siteSlices)
-                    .padding(.top, 4)
+                SiteBreakdownDonut(slices: siteSlices, hourlyBars: { slice in
+                    store.hourlyMinutes(entryID: slice.id, for: day,
+                                        startHour: startHour, endHour: endHour)
+                })
+                .padding(.top, 4)
             }
 
             if isUnsplitX {
@@ -274,7 +278,7 @@ struct EntryDetailView: View {
 
 /// The hourly bars. X = each hour of the window; Y = minutes (0–60). Empty hours
 /// keep a faint baseline tick so the time axis stays legible.
-private struct HourBarChart: View {
+struct HourBarChart: View {
     let bars: [(hour: Int, minutes: Double)]
     let color: Color
 
