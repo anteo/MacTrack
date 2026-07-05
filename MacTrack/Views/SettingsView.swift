@@ -125,7 +125,7 @@ struct SettingsView: View {
             case .sleep:      sleepCard
             case .focusGuard: focusGuardCard
             case .chart:      chartCard
-            case .tracking:   trackingCard
+            case .tracking:   trackingSection
             case .blocking:   blockingSection
             }
         }
@@ -198,6 +198,40 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
         }
+    }
+
+    /// The tracking page: the permission card plus, if you've hidden anything with
+    /// "Don't track", a list to turn each back on — the one way to undo an exclusion.
+    private var trackingSection: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.lg) {
+            trackingCard
+            if !store.excludedSites.isEmpty || !store.excludedApps.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    SectionLabel(text: "Not tracked")
+                    Text("Apps and sites you chose “Don't track” for. Turn one back on to start tracking it again.")
+                        .font(.rowMeta).foregroundStyle(Theme.Ink.tertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    excludedList
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var excludedList: some View {
+        let sites = store.excludedSites.sorted()
+        let apps = store.excludedApps.sorted()
+        let rowH: CGFloat = 42
+        ScrollView {
+            VStack(spacing: 2) {
+                ForEach(sites, id: \.self) { domain in
+                    ExcludedRow(kind: .site(domain)) { store.includeSite(domain) }
+                }
+                ForEach(apps, id: \.self) { bundleID in
+                    ExcludedRow(kind: .app(bundleID)) { store.includeApp(bundleID) }
+                }
+            }
+        }
+        .frame(height: min(CGFloat(sites.count + apps.count), 8) * (rowH + 2))
     }
 
     private var blockingCard: some View {
@@ -758,5 +792,58 @@ private struct BlockListRow: View {
                 Button("2 hours") { onBlock(120) }
             } label: { Label("Block…", systemImage: "hand.raised") }
         }
+    }
+}
+
+/// One row in the "Not tracked" list — an excluded app or site with a "Track again"
+/// button that undoes the exclusion.
+private struct ExcludedRow: View {
+    enum Kind { case site(String); case app(String) }
+    let kind: Kind
+    let onInclude: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        HStack(spacing: 11) {
+            icon
+            Text(title)
+                .font(.rowTitle).foregroundStyle(Theme.Ink.primary)
+                .lineLimit(1).truncationMode(.middle)
+            Spacer(minLength: 8)
+            Button(action: onInclude) {
+                Text("Track again")
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(Theme.settingsAccent)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Theme.settingsAccent.opacity(0.14), in: Capsule(style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 42)
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.row, style: .continuous)
+            .fill(Color.primary.opacity(hovering ? 0.06 : 0)))
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+    }
+
+    @ViewBuilder private var icon: some View {
+        switch kind {
+        case .site(let d): FaviconView(domain: SiteKey.base(d), size: 22)
+        case .app(let b): AppIconView(bundleID: b, size: 22)
+        }
+    }
+    private var title: String {
+        switch kind {
+        case .site(let d): return SiteKey.display(d)
+        case .app(let b): return Self.appName(b)
+        }
+    }
+    private static func appName(_ bundleID: String) -> String {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            return FileManager.default.displayName(atPath: url.path)
+                .replacingOccurrences(of: ".app", with: "")
+        }
+        return bundleID
     }
 }
