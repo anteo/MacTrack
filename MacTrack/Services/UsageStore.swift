@@ -118,10 +118,13 @@ final class UsageStore: ObservableObject {
     func isAppExcluded(_ bundleID: String) -> Bool { excludedApps.contains(bundleID) }
     func isSiteExcluded(_ domain: String) -> Bool { excludedSites.contains(domain) }
 
+    /// "Don't track" — hide an app/site and stop crediting it new time. It is
+    /// **non-destructive**: every list, chart, and total already filters excluded
+    /// items, and the sampler skips them, so the past history is kept intact and
+    /// `includeApp`/`includeSite` brings it all back. (It used to delete the history,
+    /// which made an accidental click permanently lose data.)
     func excludeApp(_ bundleID: String) {
         excludedApps.insert(bundleID)
-        for key in days.keys { days[key]?.apps.removeValue(forKey: bundleID) }
-        db?.deleteApp(bundleID: bundleID)
         db?.setExclusion(kind: "app", value: bundleID)
         revision &+= 1
     }
@@ -150,14 +153,12 @@ final class UsageStore: ObservableObject {
 
     func excludeSite(_ domain: String) {
         excludedSites.insert(domain)
-        for key in days.keys { days[key]?.sites.removeValue(forKey: domain) }
-        db?.deleteSite(domain: domain)
         db?.setExclusion(kind: "site", value: domain)
         revision &+= 1
     }
 
-    /// Undo "Don't track" — start tracking the app/site again going forward. (The
-    /// history removed when it was excluded doesn't come back; new time accrues.)
+    /// Undo "Don't track" — show the app/site again and resume tracking it. Since
+    /// exclusion no longer deletes anything, the full history comes right back.
     func includeApp(_ bundleID: String) {
         excludedApps.remove(bundleID)
         db?.clearExclusion(kind: "app", value: bundleID)
