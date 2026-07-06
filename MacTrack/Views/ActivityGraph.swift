@@ -26,6 +26,8 @@ struct ActivityGraph: View {
     var interactive: Bool = true
 
     @State private var hoverKey: String? = nil
+    @State private var hoverCol = -1        // hovered cell's grid position, for the tooltip
+    @State private var hoverRow = -1
 
     private let cell: CGFloat = 12       // square cell edge
     private let vGap: CGFloat = 3        // gap between days (vertical)
@@ -59,22 +61,47 @@ struct ActivityGraph: View {
             let hGap = weeks > 1 ? max(vGap, (w - CGFloat(weeks) * cell) / CGFloat(weeks - 1)) : vGap
             let step = cell + hGap
 
-            VStack(alignment: .leading, spacing: labelGap) {
-                monthLabels(weeks: weeks, step: step)
-                    .frame(height: labelH, alignment: .bottomLeading)
+            ZStack(alignment: .topLeading) {
+                VStack(alignment: .leading, spacing: labelGap) {
+                    monthLabels(weeks: weeks, step: step)
+                        .frame(height: labelH, alignment: .bottomLeading)
 
-                HStack(spacing: hGap) {
-                    ForEach(0..<weeks, id: \.self) { col in
-                        VStack(spacing: vGap) {
-                            ForEach(0..<rows, id: \.self) { row in
-                                cellView(col: col, row: row, weeks: weeks)
+                    HStack(spacing: hGap) {
+                        ForEach(0..<weeks, id: \.self) { col in
+                            VStack(spacing: vGap) {
+                                ForEach(0..<rows, id: \.self) { row in
+                                    cellView(col: col, row: row, weeks: weeks)
+                                }
                             }
                         }
                     }
                 }
+
+                // Instant floating tooltip (site mode): the hovered day + its time.
+                if fillFor != nil, hoverCol >= 0, let key = hoverKey,
+                   let tip = tooltip?(key), !tip.isEmpty {
+                    let cx = CGFloat(hoverCol) * step + cell / 2
+                    let cyTop = labelH + labelGap + CGFloat(hoverRow) * (cell + vGap)
+                    let below = hoverRow < 2
+                    tooltipPill(tip)
+                        .position(x: min(max(62, cx), w - 62),
+                                  y: below ? cyTop + cell + 14 : cyTop - 12)
+                }
             }
         }
         .frame(height: totalH)
+    }
+
+    private func tooltipPill(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(Theme.Ink.secondary)
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .glassControl(interactive: false)
+            .shadow(color: .black.opacity(0.30), radius: 10, y: 3)
+            .fixedSize()
+            .allowsHitTesting(false)
+            .transition(.opacity)
     }
 
     @ViewBuilder
@@ -88,7 +115,7 @@ struct ActivityGraph: View {
             Color.clear.frame(width: cell, height: cell)
         } else if let fillFor {
             // Site-activity mode: shade every day by its own time on the site.
-            if let c = fillFor(key) { siteCell(shape, color: c, key: key) }
+            if let c = fillFor(key) { siteCell(shape, color: c, key: key, col: col, row: row) }
             else { emptyCell(shape) }
         } else if isCurrentWeek && row == todayRow {
             // Today: a plain gray cell you can click to return to today's data —
@@ -149,7 +176,7 @@ struct ActivityGraph: View {
 
     /// A day in site-activity mode: the site's color at a shade set by that day's
     /// time. Display-only — it lifts and shows a tooltip on hover, but isn't tappable.
-    private func siteCell(_ shape: RoundedRectangle, color c: Color, key: String) -> some View {
+    private func siteCell(_ shape: RoundedRectangle, color c: Color, key: String, col: Int, row: Int) -> some View {
         let hovered = hoverKey == key
         return shape
             .fill(c)
@@ -159,8 +186,10 @@ struct ActivityGraph: View {
             .shadow(color: c.opacity(hovered ? 0.5 : 0), radius: hovered ? 3 : 0)
             .zIndex(hovered ? 1 : 0)
             .contentShape(shape)
-            .onHover { hoverKey = $0 ? key : (hoverKey == key ? nil : hoverKey) }
-            .help(tooltip?(key) ?? "")
+            .onHover { on in
+                if on { hoverKey = key; hoverCol = col; hoverRow = row }
+                else if hoverKey == key { hoverKey = nil; hoverCol = -1; hoverRow = -1 }
+            }
             .animation(.snappy(duration: 0.18), value: hovered)
     }
 
