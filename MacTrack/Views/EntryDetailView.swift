@@ -180,10 +180,15 @@ struct EntryDetailView: View {
                     Spacer()
                 }
                 .padding(.top, 14).padding(.bottom, 4)
-                SiteBreakdownDonut(slices: siteSlices, hourlyBars: { slice in
-                    store.hourlyMinutes(entryID: slice.id, for: day,
-                                        startHour: startHour, endHour: endHour)
-                })
+                SiteBreakdownDonut(
+                    slices: siteSlices,
+                    hourlyBars: { slice in
+                        store.hourlyMinutes(entryID: slice.id, for: day,
+                                            startHour: startHour, endHour: endHour)
+                    },
+                    dailyActivity: { slice in
+                        store.dailySeconds(entryID: slice.id, daysBack: 140)
+                    })
                 .padding(.top, 4)
             }
 

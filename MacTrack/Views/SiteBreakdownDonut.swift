@@ -19,10 +19,21 @@ struct SiteBreakdownDonut: View {
     /// Per-hour minutes for a tapped slice, so tapping a website swaps the legend for
     /// that site's hourly bar chart. Supplied by the parent (which owns the store).
     var hourlyBars: (Slice) -> [(hour: Int, minutes: Double)] = { _ in [] }
+    /// Per-day seconds for a tapped slice across history, for its activity grid.
+    var dailyActivity: (Slice) -> [String: Double] = { _ in [:] }
+
+    /// The drilled-in view can show either the per-hour bar chart or a GitHub-style
+    /// activity grid of the site across every past day.
+    enum DrillMode: String, CaseIterable, Identifiable {
+        case chart = "Chart", activity = "Activity"
+        var id: String { rawValue }
+    }
 
     @State private var hovered: Int? = nil
     @State private var selected: Int? = nil
     @State private var cursorActive = false
+    @State private var drillMode: DrillMode = .chart
+    @State private var activityDaily: [String: Double] = [:]
 
     private let drillCurve: Animation = .timingCurve(0.22, 1, 0.36, 1, duration: 0.3)
 
@@ -153,11 +164,56 @@ struct SiteBreakdownDonut: View {
                 Text(Format.duration(s.seconds))
                     .font(.rowValue.monospacedDigit()).foregroundStyle(Theme.Ink.primary)
             }
-            .padding(.bottom, 9)
+            .padding(.bottom, 8)
+
+            // A slider under the site name: per-hour chart, or its all-time activity grid.
+            HStack {
+                modeToggle
+                Spacer()
+            }
+            .padding(.bottom, 8)
+
             Rectangle().fill(Theme.hairline).frame(height: 0.5).padding(.bottom, 8)
-            HourBarChart(bars: hourlyBars(s), color: s.color)
+
+            ZStack {
+                if drillMode == .chart {
+                    HourBarChart(bars: hourlyBars(s), color: s.color).transition(.opacity)
+                } else {
+                    SiteActivityGraph(color: s.color, daily: activityDaily).transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: drillMode)
+            .task(id: "\(s.id)|\(drillMode == .activity)") {
+                if drillMode == .activity { activityDaily = dailyActivity(s) }
+            }
         }
         .padding(.horizontal, 4)
+    }
+
+    private var modeToggle: some View {
+        HStack(spacing: 3) {
+            ForEach(DrillMode.allCases) { m in
+                let sel = drillMode == m
+                Button { withAnimation(.easeOut(duration: 0.2)) { drillMode = m } } label: {
+                    Text(m.rawValue)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(sel ? Theme.Ink.primary : Theme.Ink.tertiary)
+                        .lineLimit(1).fixedSize()
+                        .padding(.vertical, 5).padding(.horizontal, 11)
+                        .background {
+                            if sel {
+                                Capsule(style: .continuous).fill(Theme.fill(2))
+                                    .overlay(Capsule().strokeBorder(Theme.hairlineStrong, lineWidth: 0.5))
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .background(Theme.fill(0), in: Capsule(style: .continuous))
+        .fixedSize()
     }
 
     private var legend: some View {
@@ -265,5 +321,45 @@ struct SiteBreakdownDonut: View {
     private static func hueDistance(_ a: Double, _ b: Double) -> Double {
         let d = abs(a - b).truncatingRemainder(dividingBy: 1)
         return min(d, 1 - d)
+    }
+}
+
+/// The site's all-time activity grid: the shared `ActivityGraph`, but every day is
+/// shaded in the site's own color — the busiest day at full color (its brightest,
+/// lightest shade on the dark panel), quieter days dimmer, no-data days a faint gray
+/// — exactly like GitHub's green scale, in the site's dynamic color instead.
+private struct SiteActivityGraph: View {
+    let color: Color
+    let daily: [String: Double]      // day key → seconds on this site
+
+    private var maxV: Double { max(daily.values.max() ?? 1, 1) }
+
+    var body: some View {
+        ActivityGraph(
+            fillFor: { key in
+                guard let v = daily[key], v > 0 else { return nil }
+                // Four shades like GitHub: the peak day gets the full color, quieter
+                // days step down toward the background.
+                let t = v / maxV
+                let level: Double = t < 0.25 ? 0.34 : t < 0.5 ? 0.55 : t < 0.75 ? 0.76 : 1.0
+                return color.opacity(level)
+            },
+            tooltip: { key in
+                guard let v = daily[key] else { return "" }
+                return Self.dayLabel(key) + " · " + Format.duration(v)
+            },
+            interactive: false)
+    }
+
+    private static let fmtIn: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX"); return f
+    }()
+    private static let fmtOut: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE, MMM d"; return f
+    }()
+    private static func dayLabel(_ key: String) -> String {
+        guard let d = fmtIn.date(from: key) else { return key }
+        return fmtOut.string(from: d)
     }
 }
