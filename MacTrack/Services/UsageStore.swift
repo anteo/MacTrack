@@ -257,6 +257,22 @@ final class UsageStore: ObservableObject {
         return result
     }
 
+    /// Per-day seconds an entry ("site:domain") accrued over the last `daysBack` days
+    /// (only days with time) — powers the per-site activity grid, where each day is
+    /// shaded by how much time went to that site.
+    func dailySeconds(entryID: String, daysBack: Int) -> [String: Double] {
+        var out: [String: Double] = [:]
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: Date())
+        for i in 0..<max(0, daysBack) {
+            guard let date = cal.date(byAdding: .day, value: -i, to: start) else { continue }
+            let key = DayKey.key(for: date)
+            let s = entrySeconds(entryID: entryID, for: key)
+            if s > 0 { out[key] = s }
+        }
+        return out
+    }
+
     /// Your best days, ranked by the *least* time spent on unproductive apps and
     /// sites. Only **completed** days count — today is still in progress, so its
     /// unproductive time can only grow and it shouldn't be crowned a "best day" yet.
