@@ -16,6 +16,14 @@ struct ActivityGraph: View {
     var selectedDay: String? = nil
     /// Called when a past day with data is tapped.
     var onSelect: (String) -> Void = { _ in }
+    /// Site-activity mode: given a day key, its fill (a shade of the site's color);
+    /// nil = no data that day. When set, this replaces the category `winners`
+    /// coloring and every day (including today) is shaded the same way.
+    var fillFor: ((String) -> Color?)? = nil
+    /// Hover tooltip per day (site mode shows the date + time on that site).
+    var tooltip: ((String) -> String)? = nil
+    /// When false, cells are display-only (no tap, no pointer, no selection ring).
+    var interactive: Bool = true
 
     @State private var hoverKey: String? = nil
 
@@ -78,6 +86,10 @@ struct ActivityGraph: View {
             // Days later this week haven't happened — don't draw them. A clear
             // placeholder keeps every column the same height so rows stay aligned.
             Color.clear.frame(width: cell, height: cell)
+        } else if let fillFor {
+            // Site-activity mode: shade every day by its own time on the site.
+            if let c = fillFor(key) { siteCell(shape, color: c, key: key) }
+            else { emptyCell(shape) }
         } else if isCurrentWeek && row == todayRow {
             // Today: a plain gray cell you can click to return to today's data —
             // deliberately no selection ring, since today isn't a picked past day.
@@ -133,6 +145,23 @@ struct ActivityGraph: View {
             .onHover { hoverKey = $0 ? key : (hoverKey == key ? nil : hoverKey) }
             .onTapGesture { onSelect(key) }
             .animation(.snappy(duration: 0.18), value: active)
+    }
+
+    /// A day in site-activity mode: the site's color at a shade set by that day's
+    /// time. Display-only — it lifts and shows a tooltip on hover, but isn't tappable.
+    private func siteCell(_ shape: RoundedRectangle, color c: Color, key: String) -> some View {
+        let hovered = hoverKey == key
+        return shape
+            .fill(c)
+            .overlay(shape.strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5))
+            .frame(width: cell, height: cell)
+            .scaleEffect(hovered ? 1.16 : 1)
+            .shadow(color: c.opacity(hovered ? 0.5 : 0), radius: hovered ? 3 : 0)
+            .zIndex(hovered ? 1 : 0)
+            .contentShape(shape)
+            .onHover { hoverKey = $0 ? key : (hoverKey == key ? nil : hoverKey) }
+            .help(tooltip?(key) ?? "")
+            .animation(.snappy(duration: 0.18), value: hovered)
     }
 
     /// The day key ("yyyy-MM-dd") for the cell at `(col, row)`, walking back from
