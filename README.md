@@ -1,8 +1,6 @@
 # MacTrack
 
-A free, native macOS menu bar app that shows where your time actually goes: which **apps** you focus on, which **websites** you spend it on, and **how productive** that time is. It can also **block** distracting apps and sites on a locked timer, and **pause overnight**. No account, no subscription, no cloud. It lives in your menu bar, stays out of the way, and keeps every byte of data on your Mac.
-
-Most time trackers are heavy, paid, and want your data. MacTrack is the opposite: one small menu bar app, a clean read on your day, and a database that never leaves your machine.
+A free, native macOS menu bar app that tracks which **apps** you use, which **websites** you spend time on, and **how productive** that time is. It can also **block** distracting apps and sites on a locked timer and **pause overnight**. No account, no subscription, no cloud: the database stays on your Mac.
 
 <p align="center">
   <img src="docs/apps.png" width="252" alt="Apps view" />
@@ -12,31 +10,31 @@ Most time trackers are heavy, paid, and want your data. MacTrack is the opposite
 
 ## What it does
 
-- **Tracks focused time, not open windows.** Time counts only for the app you are actually in front of. Background apps never inflate your totals.
-- **Tracks individual websites.** When you are in a browser, MacTrack credits time to the site's domain (`youtube.com`, `github.com`), so you see web time the way you experience it. Works with Safari, Chrome, Edge, Brave, Arc, and Vivaldi.
-- **Splits your X accounts.** Run more than one X account? MacTrack reads which one is active straight from the page and tracks each on its own row, so the account you doomscroll and the one you use for work never blur together.
-- **Knows when you step away.** Tracking pauses when you go idle or lock the screen, so a coffee break never lands on whatever you left open.
-- **Apps, Websites, and All.** Toggle between just apps, just sites, or one merged ranking sorted by time. In the merged view the browser app drops out so its individual sites tell the real story.
-- **A clean daily line chart.** The top items plotted across your day in each app or site's own brand color, with a hover scrubber for exact values. The chart spans your **real active window** — from the first activity when you wake the Mac to your last — instead of a fixed schedule.
-- **Your true total time.** The productivity overview headlines your **total active time on the Mac** for the day, measured from your first move; the home list keeps the live "what you're on right now" readout at the top instead.
-- **Drill into any row.** Click an app or site to open its detail — a bar chart of when the time went, toggled between **Day** (per hour), **Week**, and **Month** (per day), in its own brand color, with its share of your day, week, or month called out.
-- **Reset an accidental visit.** Opened something for a second by mistake? On the productivity donut, drill into a slice and right-click the item → **Reset time** zeroes it for the day so it drops off the graph. It's not "don't track" — time re-accumulates if you go back.
-- **Glanceable totals.** The menu bar shows live time for whatever you are on right now. Open the popover for the full breakdown.
-- **Right-click to ignore.** Don't want something tracked? Right-click any row and choose "Don't track." It disappears and stays gone.
-- **A productivity score.** Tag any app or site as productive or unproductive (right-click → **Productivity**). MacTrack rolls your day into a Productive / Unproductive / Other donut so you see your focus at a glance; anything untagged counts as Other. Browsers themselves are never judged — only the sites you actually visit are, so an empty tab or a search-results page you pass through never lands in the split (it still counts toward your total time).
-- **A history you can scrub.** A GitHub-style activity grid colors each past day by what dominated it — productive, unproductive, or other. Click any day to rewind the whole popover — donut, ranked list, and chart — to that day's data.
-- **A best-days leaderboard.** A trophy button ranks the days you spent the **least** time on unproductive things — so you can see your best days at a glance (only completed days count, so today never gets crowned mid-progress).
-- **Block distractions.** Right-click anything and block it for 15 minutes to 2 hours — or open **Settings → Blocking** to search any site (even one you've never visited) and block it there. While a block is live there is no off switch — a locked countdown, plus app-hiding and tab-bouncing, keeps you out until it expires. An optional **system-level filter** (a signed Network Extension) makes it DoH-proof and keeps working even if you quit MacTrack — see [SETUP_BLOCKING.md](SETUP_BLOCKING.md).
-- **Block one X account, keep the other.** Block just your doomscroll account and MacTrack notices when it's the active one and **auto-switches you to your allowed account**; the other one keeps working normally.
-- **Pause = screen off.** The Pause button stops tracking *and* sleeps the display; the first mouse move wakes the screen and auto-resumes tracking, so stepping away is one click and coming back is automatic.
-- **Good-night mode.** One tap stops tracking for the night and auto-resumes at the wake time you set, so late-night idle never skews your day.
-- **Focus Guard.** Linger too long on something you've tagged unproductive and MacTrack frosts the whole screen with a quote — a line of discipline from Stoics, conquerors, founders, and investors — set in a serif card that writes itself in word by word. It clears the moment you switch away; a quiet link to get back to work waits at the bottom and only appears once you pause and click. Pick which quote collections feed it and how long "too long" is in settings.
+- **Focused time only.** Time counts for the app in front of you. Background apps never inflate your totals.
+- **Per-website time.** In a browser, time goes to the site's domain (`youtube.com`, `github.com`). Safari, Chrome, Edge, Brave, Arc, and Vivaldi.
+- **Separate X accounts.** MacTrack reads the active X account from the page and gives each one its own row.
+- **Idle and lock detection.** Tracking pauses when you go idle or lock the screen, so a coffee break never lands on whatever you left open.
+- **Apps, Websites, and All.** Toggle between apps only, sites only, or one merged ranking by time. The merged view drops the browser app so its sites stand on their own.
+- **Daily line chart.** Top items plotted across your day in each app or site's brand color, with a hover scrubber for exact values. It spans your real active window, first activity to last.
+- **Total active time.** The productivity overview headlines your total active time on the Mac, measured from your first move. The home list keeps a live readout of what you're on right now at the top.
+- **Row detail.** Click an app or site for a bar chart of when the time went, by hour, week, or month.
+- **Reset time.** Opened something by mistake? Drill into a donut slice, right-click the item → **Reset time**, and it zeroes for the day. It re-accumulates if you go back.
+- **Menu bar readout.** Live time for whatever you are on. Open the popover for the full breakdown.
+- **Right-click to ignore.** Right-click any row and choose "Don't track." It disappears and stays gone.
+- **Productivity score.** Tag any app or site productive or unproductive (right-click → **Productivity**) and your day rolls into a Productive / Unproductive / Other donut.
+- **Day-by-day history.** A GitHub-style activity grid colors each past day by what dominated it. Click a day to rewind the popover to it.
+- **Best-days leaderboard.** A trophy button ranks the days you spent the **least** time on unproductive things.
+- **Blocking.** Right-click anything and block it for 15 minutes to 2 hours. A live block has no off switch, and an optional system-level filter keeps enforcing it even when MacTrack isn't running.
+- **Block one X account, keep the other.** Block your doomscroll account and MacTrack auto-switches you to the allowed one when the blocked account is active.
+- **Pause sleeps the display.** Pause stops tracking and sleeps the display. The first mouse move wakes the screen and resumes tracking.
+- **Good-night mode.** One tap stops tracking for the night and resumes at the wake time you set.
+- **Focus Guard.** Linger too long on something tagged unproductive and MacTrack frosts the screen with a quote until you switch away.
 
 ## Focus & productivity
 
-Right-click any app or website and mark it **Productive** or **Unproductive**. The pie-chart toggle in the header flips the popover to a productivity overview — one donut splitting your day into Productive / Unproductive / Other, with the productive share called out in the middle. Untagged time is Other, so the picture is honest from day one.
+Right-click any app or website and mark it **Productive** or **Unproductive**. The pie-chart toggle in the header flips the popover to a productivity overview: one donut splitting your day into Productive / Unproductive / Other, with the productive share in the middle. Untagged time is Other.
 
-A browser is judged only by the **sites** you visit, never as an app — so a new/empty tab, an internal page, or a search-results page (Google, DuckDuckGo, Bing, …) you pass through on the way somewhere is left out of the split entirely and can't inflate Other. That time still counts toward your total, so the number above the donut stays honest.
+A browser is judged only by the **sites** you visit, never as an app. New or empty tabs, internal pages, and search-results pages (Google, DuckDuckGo, Bing, …) are left out of the split, so they can't inflate Other. That time still counts toward your total.
 
 <p align="center">
   <img src="docs/donut.png" width="300" alt="Productivity overview donut" />
@@ -45,9 +43,9 @@ A browser is judged only by the **sites** you visit, never as an app — so a ne
 
 ### Your history, day by day
 
-Below the donut, a GitHub-style **activity grid** built from squircles colors each past day by the category that took the most time that day — Productive (amber), Unproductive (red), or Other (gray) — each with a soft matching glow. Today stays a neutral gray until the day is over, so it only commits to a color once the winner is final; days later in the week aren't drawn yet.
+Below the donut, a GitHub-style **activity grid** of squircles colors each past day by the category that took the most time: Productive (amber), Unproductive (red), or Other (gray), each with a soft matching glow. Today stays neutral gray until the day is over, and later days in the week aren't drawn yet.
 
-Click any day's square to **rewind the whole popover to that day**: the donut, the Productive / Unproductive / Other split, the ranked apps-and-sites list, and the line chart all animate to that day's data, and the header shows the date and total with a **Today** button to jump back.
+Click a day's square and the whole popover rewinds: donut, split, ranked list, and chart animate to that day, and the header shows the date and total with a **Today** button to jump back.
 
 <p align="center">
   <img src="docs/activity.png" width="300" alt="Activity grid colored by each day's dominant category" />
@@ -55,11 +53,11 @@ Click any day's square to **rewind the whole popover to that day**: the donut, t
 
 ### Best days
 
-A **trophy button** next to the pie-chart button opens a leaderboard of your **least-distracted days** — your top three days ranked by the *least* time spent on unproductive apps and sites, showing the amount (not the date). Only completed days you actually used count, so a quiet day you barely touched the Mac — or today, still in progress — can't sneak to the top. It reuses the home list's exact rows, so it feels of a piece with the rest of the popover.
+A **trophy button** next to the pie-chart button ranks your top three days by the *least* time spent on unproductive apps and sites, showing the amount rather than the date. Only completed days you actually used count, so a quiet day you barely touched the Mac can't sneak to the top, and neither can today.
 
 ### Drill into any app or site
 
-Click any row to open its detail: a bar chart of exactly when the time went, with a **Day / Week / Month** toggle — minute-by-hour across the day, or totalled per day across the week or the whole month — drawn in the app or site's **own brand color**, pulled live from its icon or favicon (Safari's blue, YouTube's red). The header calls out its share of your screen time: **% of today**, **% of the week**, or **% of the month** to match.
+Click any row for a bar chart of exactly when the time went, with a **Day / Week / Month** toggle: minute-by-hour across the day, or per-day totals across the week or month. It's drawn in the app or site's **own brand color**, pulled from its icon or favicon (Safari's blue, YouTube's red). The header shows **% of today**, **% of the week**, or **% of the month** to match.
 
 <p align="center">
   <img src="docs/detail.png" width="300" alt="An app's detail: hourly bar chart in its brand color, with its share of the day" />
@@ -68,7 +66,7 @@ Click any row to open its detail: a bar chart of exactly when the time went, wit
 
 ### X accounts, tracked separately
 
-Signed into more than one X account? MacTrack reads the **active** account straight from the page and tracks each one on its own row — so the account you doomscroll and the one you keep professional never get lumped together. Open it and a slider lets you switch between accounts or see the combined **All** total, and you can tag each account productive or unproductive on its own. Because all X accounts share one URL, this needs **"Allow JavaScript from Apple Events"** turned on in your browser's Develop menu — the one signal that reveals which account is live. (Account names blurred below.)
+Signed into more than one X account? MacTrack reads the **active** account from the page and tracks each one on its own row. A slider switches between accounts or shows the combined **All** total, and you can tag each separately. Because all X accounts share one URL, this needs **"Allow JavaScript from Apple Events"** turned on in your browser's Develop menu. (Account names blurred below.)
 
 <p align="center">
   <img src="docs/x-accounts.png" width="300" alt="X account switcher: an All total plus a row per account" />
@@ -76,23 +74,23 @@ Signed into more than one X account? MacTrack reads the **active** account strai
 
 ## Blocking
 
-Need to lock yourself out of something? Right-click any app or site, choose **Block**, and pick 15 minutes to 2 hours. A locked countdown appears in the popover with no cancel button — while it runs, MacTrack hides the blocked app and bounces blocked tabs, and the block survives quitting and relaunching. It also resists clock tampering: moving your clock forward can't skip a running block.
+Right-click any app or site, choose **Block**, and pick 15 minutes to 2 hours. A locked countdown appears in the popover with no cancel button. While it runs, MacTrack hides the blocked app and bounces blocked tabs. The block survives quitting and relaunching, and moving your clock forward can't skip it.
 
 <p align="center">
   <img src="docs/blocking.png" width="320" alt="Blocking an app for a set time" />
 </p>
 
-That app-side layer can be dodged by force-quitting MacTrack. For a bulletproof, system-wide block — a signed **Network Extension** content filter, DoH-proof and enforced by macOS itself even when MacTrack isn't running — see **[SETUP_BLOCKING.md](SETUP_BLOCKING.md)**. It needs your own Apple Developer signing, so it ships as code plus a step-by-step guide.
+Force-quitting MacTrack gets around that app-side layer. For a system-wide block, a signed **Network Extension** content filter is DoH-proof and enforced by macOS itself even when MacTrack isn't running. It needs your own Apple Developer signing, so it ships as code plus a step-by-step guide: **[SETUP_BLOCKING.md](SETUP_BLOCKING.md)**.
 
-**Block from settings, no visit required.** You can't right-click a site you haven't opened today — so **Settings → Blocking** has a picker of your recently-used sites (each blockable right there) and a search box to find *any* site you've ever been on, or to type a brand-new domain and block it on the spot.
+**Block from settings, no visit required.** You can't right-click a site you haven't opened today, so **Settings → Blocking** has a picker of your recent sites and a search box for any site you've been on, or a brand-new domain you type.
 
-**Per-account X blocking.** Since both of your X accounts share `x.com`, a domain block can't tell them apart — so MacTrack reads the *active* account from the page and blocks only the one you chose. Even better: when you land on the blocked account, it drives X's account switcher to **route you onto your allowed account automatically**, and only bounces the tab as a fallback if there's nowhere to switch to. (Per-account enforcement is app-side; it needs the same "Allow JavaScript from Apple Events" toggle the account tracking uses.)
+**Per-account X blocking.** Both X accounts share `x.com`, so a domain block can't tell them apart. MacTrack reads the *active* account and blocks only the one you chose, driving X's account switcher to **route you onto your allowed account** and bouncing the tab only if there's nowhere to switch to. This is app-side and needs the same "Allow JavaScript from Apple Events" toggle.
 
 ## Focus Guard
 
-Blocking is the hard stop. Focus Guard is the gentle one. Switch it on, and once you've spent an unbroken stretch — the threshold is yours, from 5 minutes to an hour — on anything tagged **unproductive**, MacTrack frosts the entire screen and shows a single quote, centred, in a serif card that reveals itself one word at a time. It's a nudge, not a jail: the blur lifts on its own the instant you move to something else, and the way back to work sits quietly at the bottom of the screen, appearing only after you stop and click once.
+Blocking is the hard stop. Focus Guard is the gentle one. Once you've spent an unbroken stretch on anything tagged **unproductive**, MacTrack frosts the entire screen and shows a single quote, centred, in a serif card that reveals itself one word at a time. The threshold is yours, from 5 minutes to an hour. The blur lifts the instant you switch to something else, and the way back to work sits at the bottom of the screen, appearing only after you stop and click once.
 
-The quotes come from collections you choose in settings — Stoic discipline (Seneca, Epictetus, Marcus Aurelius), leaders and conquerors (Caesar, Napoleon, Sun Tzu), business and money, daily motivation, Naval Ravikant, and more — so the voice doing the nudging is one you actually respect. The card is set in Newsreader with the author as an italic em-dash signoff; short quotes stay on one line.
+Pick the collections in settings: Stoic discipline (Seneca, Epictetus, Marcus Aurelius), leaders and conquerors (Caesar, Napoleon, Sun Tzu), business and money, daily motivation, Naval Ravikant, and more. The card is set in Newsreader with the author on an italic signoff line.
 
 <p align="center">
   <img src="docs/focus-guard.png" width="520" alt="Focus Guard: a frosted screen with a centred quote" />
@@ -100,9 +98,9 @@ The quotes come from collections you choose in settings — Stoic discipline (Se
 
 ## Privacy
 
-- **Local-first.** Your history lives in a SQLite database at `~/Library/Application Support/MacTrack/`. It is never uploaded anywhere.
-- **Domains only.** MacTrack records that you were on a domain and for how long. It never saves page titles or what you were doing on a site.
-- **One network call.** The only thing fetched from the internet is website favicons (cached after first use). Everything else is offline.
+- **Local-first.** Your history lives in a SQLite database at `~/Library/Application Support/MacTrack/`. Nothing is uploaded anywhere.
+- **Domains only.** MacTrack records the domain and how long you were on it, never page titles or what you were doing.
+- **One network call.** The only thing fetched from the internet is website favicons, cached after first use.
 
 ## Requirements
 
@@ -131,11 +129,18 @@ Launch at login can be turned on in settings.
 
 ## Permissions
 
-To measure per-website time, MacTrack reads the active tab's address through macOS **Automation** (Apple Events). The first time it reads a browser, macOS asks for permission. Allow it, or website time won't be recorded. You can change it later in **System Settings → Privacy & Security → Automation**, or from the gear in MacTrack.
+To measure per-website time, MacTrack reads the active tab's address through macOS **Automation** (Apple Events). The first time it reads a browser, macOS asks for permission. Allow it, or website time won't be recorded. Change it later in **System Settings → Privacy & Security → Automation**, or from the gear in MacTrack.
 
 ## Settings
 
-Open settings from the gear in the popover. It opens to a **home that groups everything into categories** — General, Good Night, Focus Guard, Chart, Website Tracking, and Blocking — and you tap one to drill into just its controls, so no screen runs off the bottom: launch at login and the idle timeout; your good-night **wake time**; website-tracking permission; **Focus Guard** (switch it on, set how long counts as too long, tick the quote collections, and play a Test of the blur); and **Blocking** — the system-level filter toggle plus a **block-a-website picker**: your recent sites, each blockable on the spot, and a search box to find any site you've visited or type a new domain to block.
+Settings opens from the gear in the popover, to a home that groups controls into categories so no screen runs off the bottom:
+
+- **General** launch at login and the idle timeout
+- **Good Night** your wake time
+- **Focus Guard** switch it on, set the threshold, tick the quote collections, and Test the blur
+- **Chart** the start and end hour of the daily chart
+- **Website Tracking** the Automation permission, plus the list of anything you hid with "Don't track" so you can turn it back on
+- **Blocking** the system-level filter toggle plus the website picker: your recent sites, each blockable on the spot, and a search box for any site you've visited or a new domain
 
 <p align="center">
   <img src="docs/settings.png" width="280" alt="Settings" />
@@ -143,11 +148,11 @@ Open settings from the gear in the popover. It opens to a **home that groups eve
 
 ## How it works
 
-A once-a-second sampler measures the real elapsed time between ticks and credits it to whatever is in focus: the frontmost app, and the active tab's domain if that app is a browser. Large gaps (sleep, wake) are dropped, and idle or locked time is skipped — so the first and last credited minute of a day mark when you actually started and stopped, which is what the chart's active window and your total time are drawn from. New/empty tabs and search-results pages are credited to no site, so they stay out of the productivity split while still counting toward the total. Totals roll up per day; a lightweight per-minute series powers the chart. Writes are incremental and crash-safe (SQLite WAL), with daily backups and automatic restore.
+A once-a-second sampler measures the real elapsed time between ticks and credits it to whatever is in focus: the frontmost app, plus the active tab's domain if that app is a browser. Large gaps (sleep, wake) are dropped and idle or locked time is skipped, so the first and last credited minute of a day mark when you actually started and stopped. That's where the chart's active window and your total time come from. New or empty tabs and search-results pages are credited to no site, so they stay out of the productivity split but still count toward the total. Totals roll up per day, and a per-minute series powers the chart. Writes are incremental and crash-safe (SQLite WAL), with daily backups and automatic restore.
 
 ## Tech
 
-Swift, SwiftUI, and AppKit. SQLite via the system library (no third-party dependencies). `MenuBarExtra` for the menu bar surface, Apple Events for browser URLs, and `SMAppService` for launch at login. Focus Guard's blur is a non-activating `NSPanel` at `CGShieldingWindowLevel()` with a native `NSVisualEffectView`, so it covers the menu bar and fullscreen apps without stealing focus.
+Swift, SwiftUI, and AppKit. SQLite via the system library, no third-party dependencies. `MenuBarExtra` for the menu bar surface, Apple Events for browser URLs, `SMAppService` for launch at login. Focus Guard's blur is a non-activating `NSPanel` at `CGShieldingWindowLevel()` with a native `NSVisualEffectView`, so it covers the menu bar and fullscreen apps without stealing focus.
 
 ```
 MacTrack/
