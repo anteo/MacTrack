@@ -186,9 +186,9 @@ final class BrowserURLReader {
             on error
                 set theTitle to ""
             end try
-            // `NSAppleScript` rejects a literal control character in source code.
-            // Build the unit-separator delimiter in AppleScript instead so the
-            // returned descriptor remains safely splittable in Swift.
+            -- `NSAppleScript` rejects a literal control character in source code.
+            -- Build the unit-separator delimiter in AppleScript instead so the
+            -- returned descriptor remains safely splittable in Swift.
             return theURL & (character id 31) & theTitle
         end tell
         """
