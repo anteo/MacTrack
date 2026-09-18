@@ -312,12 +312,9 @@ struct MenuRootView: View {
             Text("·").foregroundStyle(Theme.Ink.faint)
             Text("\(siteEntries.count) sites")
             Spacer()
-            Button { NSApp.terminate(nil) } label: {
-                Text("Quit")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Theme.Ink.tertiary)
+            GlassIconButton(systemName: "power", size: 24, help: "Quit MacTrack") {
+                NSApp.terminate(nil)
             }
-            .buttonStyle(.plain)
         }
         .font(.system(size: 11))
         .foregroundStyle(Theme.Ink.tertiary)
