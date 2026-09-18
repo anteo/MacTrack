@@ -4,6 +4,8 @@ Notable changes to MacTrack. Dates are in the developer's local time.
 
 ## Unreleased
 
+## 0.0.2 - 2026-09-18
+
 ### Added
 - **Best-days leaderboard** — a trophy button ranks your completed days by the least
   time spent on unproductive apps/sites (today, still in progress, is never crowned).
@@ -30,3 +32,12 @@ Notable changes to MacTrack. Dates are in the developer's local time.
   search-results pages stay out of the Productive/Unproductive/Other split while still
   counting toward your total time.
 - Settings reorganized into a category home so no page runs off the bottom.
+- Activity views can switch between cumulative, hourly, and workday timelines.
+- The active timeline total now matches the exact tracked-time total shown in the overview.
+
+### Fixed
+- Arc active-tab tracking and AppleScript comment handling.
+
+### UI
+- Added the MacTrack application icon.
+- Tightened usage rows and replaced the quit control with an icon button.
