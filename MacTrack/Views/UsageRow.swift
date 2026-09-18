@@ -62,7 +62,7 @@ struct UsageRow: View, Equatable {
                 .animation(.calm, value: entry.seconds)
         }
         .padding(.horizontal, 10)
-        .frame(height: entry.subtitle?.isEmpty == false ? 42 : 36)
+        .frame(height: entry.subtitle?.isEmpty == false ? 38 : 32)
         .background(alignment: .leading) {
             ZStack(alignment: .leading) {
                 // Quiet bar-chart wash: width encodes this row's share of the day.
