@@ -350,6 +350,7 @@ struct WorkdayChartView: View {
     let segments: [WorkdayChartSegment]
     let startMinute: Int
     let endMinute: Int
+    let trackedSeconds: Double
     @State private var hoveredSegmentID: String?
 
     var body: some View {
@@ -421,7 +422,7 @@ struct WorkdayChartView: View {
     }
 
     private var activeLabel: String {
-        let minutes = segments.reduce(0) { $0 + $1.endMinute - $1.startMinute }
+        let minutes = Int(trackedSeconds / 60)
         return "\(minutes / 60)h \(minutes % 60)m active"
     }
     private var actualStart: Int { segments.first?.startMinute ?? startMinute }

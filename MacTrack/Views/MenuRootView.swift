@@ -244,7 +244,9 @@ struct MenuRootView: View {
                 segments: store.workdaySegments(entries: entries, for: viewDay, colors: entryColors,
                                                 startMinute: chartWindow.startHour * 60,
                                                 endMinute: chartWindow.endHour * 60),
-                startMinute: chartWindow.startHour * 60, endMinute: chartWindow.endHour * 60)
+                startMinute: chartWindow.startHour * 60,
+                endMinute: chartWindow.endHour * 60,
+                trackedSeconds: store.totalSeconds(for: viewDay))
         }
     }
 
