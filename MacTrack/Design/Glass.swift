@@ -21,14 +21,13 @@ extension View {
     }
 }
 
-/// The unified frosted slab behind the whole popover. One glass pass for the
-/// liquid refraction, plus a subtle appearance-aware scrim so dense text stays
-/// legible over busy or dark wallpapers — the balance real Liquid Glass apps use.
+/// The unified frosted fill behind the whole popover. `MenuBarExtra` already owns
+/// the window's rounded silhouette, so this intentionally has no radius of its
+/// own; a second rounded slab reads as a mismatched inner corner.
 struct GlassPanelBackground: View {
-    var radius: CGFloat = 26
     @Environment(\.colorScheme) private var scheme
 
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: radius, style: .continuous) }
+    private let shape = Rectangle()
     private var scrim: Color {
         scheme == .dark ? Color.black.opacity(0.24) : Color.white.opacity(0.30)
     }
