@@ -190,7 +190,7 @@ struct SettingsView: View {
         card {
             VStack(alignment: .leading, spacing: 7) {
                 Text("Website tracking").font(.rowTitle).foregroundStyle(Theme.Ink.primary)
-                Text("MacTrack reads the active tab's address via Automation. Your history stays on this Mac; only site icons are fetched from the web.")
+                Text("MacTrack reads the active tab's address via Automation. With Arc open, allow MacTrack to control Arc when macOS asks. Your history stays on this Mac; only site icons are fetched from the web.")
                     .font(.rowMeta).foregroundStyle(Theme.Ink.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
                 Button("Open Automation Settings") { Permissions.openAutomationSettings() }

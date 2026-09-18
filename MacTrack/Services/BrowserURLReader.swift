@@ -1,8 +1,9 @@
 import AppKit
 
 /// Reads the active tab's URL + title from a supported browser via Apple Events.
-/// This is what makes per-website tracking possible. Scripts run off the main
-/// thread on a serial queue; results hop back to the main queue.
+/// This is what makes per-website tracking possible. `NSAppleScript` needs a
+/// running main-loop to receive its Apple Event reply, so execution is scheduled
+/// asynchronously on the main queue rather than blocking the sampler directly.
 ///
 /// The first read of each browser triggers macOS's Automation permission prompt.
 /// We surface that state so the UI can ask the user to grant access.
@@ -10,28 +11,27 @@ final class BrowserURLReader {
 
     struct Browser {
         let bundleID: String
-        let appName: String      // AppleScript application name
         let tabAccessor: String  // "current tab" (Safari) or "active tab" (Chromium)
         /// Chromium browsers run page JavaScript via `execute … javascript`; Safari
         /// via `do JavaScript … in <tab>`.
-        var chromium: Bool { !appName.hasPrefix("Safari") }
+        let chromium: Bool
     }
 
     /// Supported browsers, keyed by bundle identifier.
     static let browsers: [String: Browser] = [
-        "com.apple.Safari":            Browser(bundleID: "com.apple.Safari", appName: "Safari", tabAccessor: "current tab"),
-        "com.apple.SafariTechnologyPreview": Browser(bundleID: "com.apple.SafariTechnologyPreview", appName: "Safari Technology Preview", tabAccessor: "current tab"),
-        "com.google.Chrome":           Browser(bundleID: "com.google.Chrome", appName: "Google Chrome", tabAccessor: "active tab"),
-        "com.google.Chrome.canary":    Browser(bundleID: "com.google.Chrome.canary", appName: "Google Chrome Canary", tabAccessor: "active tab"),
-        "com.microsoft.edgemac":       Browser(bundleID: "com.microsoft.edgemac", appName: "Microsoft Edge", tabAccessor: "active tab"),
-        "com.brave.Browser":           Browser(bundleID: "com.brave.Browser", appName: "Brave Browser", tabAccessor: "active tab"),
-        "company.thebrowser.Browser":  Browser(bundleID: "company.thebrowser.Browser", appName: "Arc", tabAccessor: "active tab"),
-        "com.vivaldi.Vivaldi":         Browser(bundleID: "com.vivaldi.Vivaldi", appName: "Vivaldi", tabAccessor: "active tab"),
+        "com.apple.Safari":            Browser(bundleID: "com.apple.Safari", tabAccessor: "current tab", chromium: false),
+        "com.apple.SafariTechnologyPreview": Browser(bundleID: "com.apple.SafariTechnologyPreview", tabAccessor: "current tab", chromium: false),
+        "com.google.Chrome":           Browser(bundleID: "com.google.Chrome", tabAccessor: "active tab", chromium: true),
+        "com.google.Chrome.canary":    Browser(bundleID: "com.google.Chrome.canary", tabAccessor: "active tab", chromium: true),
+        "com.microsoft.edgemac":       Browser(bundleID: "com.microsoft.edgemac", tabAccessor: "active tab", chromium: true),
+        "com.brave.Browser":           Browser(bundleID: "com.brave.Browser", tabAccessor: "active tab", chromium: true),
+        // Arc exposes the same active-tab/URL AppleScript surface as Chromium.
+        "company.thebrowser.Browser":  Browser(bundleID: "company.thebrowser.Browser", tabAccessor: "active tab", chromium: true),
+        "com.vivaldi.Vivaldi":         Browser(bundleID: "com.vivaldi.Vivaldi", tabAccessor: "active tab", chromium: true),
     ]
 
     static func isBrowser(_ bundleID: String) -> Bool { browsers[bundleID] != nil }
 
-    private let queue = DispatchQueue(label: "com.mactrack.applescript", qos: .utility)
     private var compiled: [String: NSAppleScript] = [:]
 
     /// True once a read has failed with a permissions error and hasn't since
@@ -48,7 +48,7 @@ final class BrowserURLReader {
 
     func fetch(bundleID: String, completion: @escaping (FetchResult) -> Void) {
         guard let browser = Self.browsers[bundleID] else { completion(.failed); return }
-        queue.async { [weak self] in
+        DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             let script = self.script(for: browser)
             var errorInfo: NSDictionary?
@@ -58,7 +58,7 @@ final class BrowserURLReader {
                 let code = (errorInfo[NSAppleScript.errorNumber] as? Int) ?? 0
                 // -1743 = not authorized to send Apple events; -600 = app not running.
                 if code == -1743 { self.automationDenied = true }
-                DispatchQueue.main.async { completion(.failed) }
+                completion(.failed)
                 return
             }
             self.automationDenied = false
@@ -71,12 +71,10 @@ final class BrowserURLReader {
             // No http(s) URL means an empty/new tab or Start Page — credit no site.
             guard let url = URL(string: urlString),
                   let scheme = url.scheme, scheme.hasPrefix("http") else {
-                DispatchQueue.main.async { completion(.noURL) }
+                completion(.noURL)
                 return
             }
-            DispatchQueue.main.async {
-                completion(.tab(TabInfo(url: url, title: (title?.isEmpty == false) ? title : nil)))
-            }
+            completion(.tab(TabInfo(url: url, title: (title?.isEmpty == false) ? title : nil)))
         }
     }
 
@@ -94,13 +92,13 @@ final class BrowserURLReader {
     /// errors — the caller then just tracks the bare domain.
     func fetchAccount(bundleID: String, completion: @escaping (String?) -> Void) {
         guard let browser = Self.browsers[bundleID] else { completion(nil); return }
-        queue.async {
+        DispatchQueue.main.async {
             let js = Self.xAccountJS
             let invoke = browser.chromium
                 ? "execute (active tab of front window) javascript \"\(js)\""
                 : "do JavaScript \"\(js)\" in current tab of front window"
             let source = """
-            tell application "\(browser.appName)"
+            tell application id "\(browser.bundleID)"
                 if (count of windows) is 0 then return ""
                 try
                     return (\(invoke)) as text
@@ -113,7 +111,7 @@ final class BrowserURLReader {
             let desc = NSAppleScript(source: source)?.executeAndReturnError(&err)
             let raw = (err == nil ? desc?.stringValue : nil) ?? ""
             let handle = Self.parseHandle(raw)
-            DispatchQueue.main.async { completion(handle) }
+            completion(handle)
         }
     }
 
@@ -135,7 +133,7 @@ final class BrowserURLReader {
     func switchXAccount(bundleID: String, toHandle handle: String) {
         guard let browser = Self.browsers[bundleID],
               handle.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" }) else { return }
-        queue.async {
+        DispatchQueue.main.async {
             // No double quotes anywhere in the JS, so it embeds cleanly. Opens the
             // switcher, then after a beat clicks the row whose avatar testid carries
             // the target handle, climbing to the nearest clickable ancestor.
@@ -144,7 +142,7 @@ final class BrowserURLReader {
                 ? "execute (active tab of front window) javascript \"\(js)\""
                 : "do JavaScript \"\(js)\" in current tab of front window"
             let source = """
-            tell application "\(browser.appName)"
+            tell application id "\(browser.bundleID)"
                 if (count of windows) is 0 then return
                 try
                     \(invoke)
@@ -158,9 +156,9 @@ final class BrowserURLReader {
     /// Forces the active tab off a blocked site by loading about:blank.
     func blockActiveTab(bundleID: String) {
         guard let browser = Self.browsers[bundleID] else { return }
-        queue.async {
+        DispatchQueue.main.async {
             let source = """
-            tell application "\(browser.appName)"
+            tell application id "\(browser.bundleID)"
                 if (count of windows) is 0 then return
                 try
                     set URL of \(browser.tabAccessor) of front window to "about:blank"
@@ -175,20 +173,23 @@ final class BrowserURLReader {
         if let existing = compiled[browser.bundleID] { return existing }
         // Returns "url<US>title" or empty string if there's no front window.
         let source = """
-        tell application "\(browser.appName)"
+        tell application id "\(browser.bundleID)"
             if (count of windows) is 0 then return ""
-            set theTab to \(browser.tabAccessor) of front window
+            -- Arc resolves its active tab lazily and returns an empty value if
+            -- the tab is first assigned to an AppleScript variable. Read the
+            -- properties directly from the window so Arc and Chromium browsers
+            -- both return the visible page. Do not swallow an error here: an
+            -- Automation denial must reach Swift so macOS can prompt the user.
+            set theURL to (URL of \(browser.tabAccessor) of front window) as text
             try
-                set theURL to (URL of theTab) as text
-            on error
-                set theURL to ""
-            end try
-            try
-                set theTitle to (name of theTab) as text
+                set theTitle to (title of \(browser.tabAccessor) of front window) as text
             on error
                 set theTitle to ""
             end try
-            return theURL & "\u{1F}" & theTitle
+            // `NSAppleScript` rejects a literal control character in source code.
+            // Build the unit-separator delimiter in AppleScript instead so the
+            // returned descriptor remains safely splittable in Swift.
+            return theURL & (character id 31) & theTitle
         end tell
         """
         let script = NSAppleScript(source: source)!
