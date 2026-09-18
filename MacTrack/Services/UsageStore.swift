@@ -479,6 +479,47 @@ final class UsageStore: ObservableObject {
         }
     }
 
+    func hourlyChartBuckets(entries: [UsageEntry], for dayKey: String,
+                            colors: [String: Color], startHour: Int, endHour: Int) -> [HourlyChartBucket] {
+        let daySamples = samples(for: dayKey)
+        return stride(from: startHour, to: max(startHour + 1, endHour), by: 1).map { hour in
+            let segments = entries.prefix(10).compactMap { entry -> (id: String, label: String, color: Color, minutes: Double)? in
+                let values = daySamples[entry.id] ?? [:]
+                let seconds = (hour * 60..<(hour * 60 + 60)).reduce(0.0) { $0 + (values[$1] ?? 0) }
+                guard seconds > 0 else { return nil }
+                return (entry.id, entry.title, colors[entry.id] ?? Theme.chartColor(entries.firstIndex(of: entry) ?? 0), min(60, seconds / 60))
+            }
+            return HourlyChartBucket(hour: hour, segments: segments)
+        }
+    }
+
+    func workdaySegments(entries: [UsageEntry], for dayKey: String,
+                         colors: [String: Color], startMinute: Int, endMinute: Int) -> [WorkdayChartSegment] {
+        let daySamples = samples(for: dayKey)
+        var result: [WorkdayChartSegment] = []
+        var active: (id: String, label: String, color: Color, start: Int, end: Int)?
+        for minute in startMinute..<max(startMinute + 1, endMinute) {
+            let winner = entries.prefix(10).enumerated().compactMap { index, entry -> (String, String, Color, Double)? in
+                let seconds = daySamples[entry.id]?[minute] ?? 0
+                guard seconds > 0 else { return nil }
+                return (entry.id, entry.title, colors[entry.id] ?? Theme.chartColor(index), seconds)
+            }.max { $0.3 < $1.3 }
+            if let winner {
+                if let current = active, current.id == winner.0 {
+                    active?.end = minute + 1
+                } else {
+                    if let current = active { result.append(.init(startMinute: current.start, endMinute: current.end, label: current.label, color: current.color)) }
+                    active = (winner.0, winner.1, winner.2, minute, minute + 1)
+                }
+            } else if let current = active {
+                result.append(.init(startMinute: current.start, endMinute: current.end, label: current.label, color: current.color))
+                active = nil
+            }
+        }
+        if let current = active { result.append(.init(startMinute: current.start, endMinute: current.end, label: current.label, color: current.color)) }
+        return result
+    }
+
     /// Per-minute samples for a day: today's live cache, or a past day's loaded
     /// lazily from the database and kept for reuse.
     private func samples(for dayKey: String) -> [String: [Int: Double]] {

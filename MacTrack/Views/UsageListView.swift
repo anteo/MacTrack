@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The ranked list for the active scope. Shows up to `maxItems` entries (10 by
-/// default) with a calm stagger on first appearance — no collapsing, no clip.
+/// default) with a calm stagger on first appearance.
 struct UsageListView: View {
     @EnvironmentObject var store: UsageStore
     @EnvironmentObject var blocks: BlockController

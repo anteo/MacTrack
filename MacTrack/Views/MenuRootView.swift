@@ -32,6 +32,13 @@ struct MenuRootView: View {
     @AppStorage("idleThreshold") private var idleThreshold: Double = 120
     @AppStorage("chartStartHour") private var chartStartHour: Int = 8
     @AppStorage("chartEndHour") private var chartEndHour: Int = 22
+    @AppStorage("usageChartMode") private var usageChartModeRaw = UsageChartMode.cumulative.rawValue
+    @AppStorage("usageListExpanded") private var usageListExpanded = true
+    @AppStorage("usageGraphExpanded") private var usageGraphExpanded = true
+
+    private var usageChartMode: UsageChartMode {
+        UsageChartMode(rawValue: usageChartModeRaw) ?? .cumulative
+    }
 
     /// The chart's x-axis window: the viewed day's real active span (first activity →
     /// last activity, snapped to whole hours), so it tracks when you actually woke
@@ -155,43 +162,105 @@ struct MenuRootView: View {
                 AllButton(selection: $scope)
             }
 
-            listHeader
+            collapsibleHeader(title: scope == .apps ? "Applications" : scope == .websites ? "Websites" : "Activity",
+                              systemName: scope.icon, expanded: $usageListExpanded)
                 .padding(.top, 14)
-                .padding(.bottom, 4)
+                .padding(.bottom, usageListExpanded ? 4 : 0)
 
-            VStack(spacing: 2) {
-                if scope == .websites && monitor.automationDenied {
-                    PermissionNudge { Permissions.openAutomationSettings() }
-                        .padding(.bottom, 6)
+            if usageListExpanded {
+                VStack(spacing: 2) {
+                    if scope == .websites && monitor.automationDenied {
+                        PermissionNudge { Permissions.openAutomationSettings() }
+                            .padding(.bottom, 6)
+                    }
+                    if entries.isEmpty {
+                        EmptyStateView(scope: scope)
+                    } else {
+                        UsageListView(entries: entries, onSelect: openEntry)
+                    }
                 }
-                if entries.isEmpty {
-                    EmptyStateView(scope: scope)
-                } else {
-                    UsageListView(entries: entries, onSelect: openEntry)
-                }
+                .id("\(scope)-\(viewDay)")
+                .transition(.opacity)
+                .animation(.calm, value: scope)
             }
-            .id("\(scope)-\(viewDay)")
-            .transition(.opacity)
-            .animation(.calm, value: scope)
 
             if !entries.isEmpty {
                 insetDivider.padding(.top, 14).padding(.bottom, 12)
-                UsageChartView(
-                    lines: store.chartLines(entries: entries, for: viewDay, colors: entryColors,
-                                            startMinute: chartWindow.startHour * 60,
-                                            endMinute: chartWindow.endHour * 60),
-                    startMinute: chartWindow.startHour * 60,
-                    endMinute: chartWindow.endHour * 60
-                )
-                .id("\(scope)-\(viewDay)")
-                .transition(.opacity)
-                .task(id: "\(scope)-\(viewDay)") {
-                    for entry in entries.prefix(10) {
-                        entryColors[entry.id] = await IconColor.resolve(for: entry)
-                    }
+                graphHeader
+                if usageGraphExpanded {
+                    graphView
+                        .padding(.top, 16)
+                        .padding(.bottom, 8)
+                        .id("\(scope)-\(viewDay)-\(usageChartMode.rawValue)")
+                        .transition(.opacity)
+                        .task(id: "\(scope)-\(viewDay)") {
+                            for entry in entries.prefix(10) {
+                                entryColors[entry.id] = await IconColor.resolve(for: entry)
+                            }
+                        }
                 }
             }
         }
+    }
+
+    private var graphHeader: some View {
+        HStack(spacing: 8) {
+            Button { withAnimation(.calm) { usageGraphExpanded.toggle() } } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "chart.xyaxis.line")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Theme.Ink.tertiary)
+                    SectionLabel(text: "Graphs")
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(usageGraphExpanded ? "Collapse Graphs" : "Expand Graphs")
+
+            Spacer(minLength: 4)
+            GraphModeSelector(selection: $usageChartModeRaw)
+            Image(systemName: usageGraphExpanded ? "chevron.up" : "chevron.down")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Theme.Ink.faint)
+        }
+    }
+
+    @ViewBuilder private var graphView: some View {
+        switch usageChartMode {
+        case .cumulative:
+            UsageChartView(
+                lines: store.chartLines(entries: entries, for: viewDay, colors: entryColors,
+                                        startMinute: chartWindow.startHour * 60,
+                                        endMinute: chartWindow.endHour * 60),
+                startMinute: chartWindow.startHour * 60,
+                endMinute: chartWindow.endHour * 60)
+        case .hourly:
+            HourlyStackedChartView(
+                buckets: store.hourlyChartBuckets(entries: entries, for: viewDay, colors: entryColors,
+                                                  startHour: chartWindow.startHour, endHour: chartWindow.endHour),
+                startHour: chartWindow.startHour, endHour: chartWindow.endHour)
+        case .workday:
+            WorkdayChartView(
+                segments: store.workdaySegments(entries: entries, for: viewDay, colors: entryColors,
+                                                startMinute: chartWindow.startHour * 60,
+                                                endMinute: chartWindow.endHour * 60),
+                startMinute: chartWindow.startHour * 60, endMinute: chartWindow.endHour * 60)
+        }
+    }
+
+    private func collapsibleHeader(title: String, systemName: String, expanded: Binding<Bool>) -> some View {
+        Button { withAnimation(.calm) { expanded.wrappedValue.toggle() } } label: {
+            HStack(spacing: 7) {
+                Image(systemName: systemName).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.Ink.tertiary)
+                SectionLabel(text: title)
+                Spacer()
+                Image(systemName: expanded.wrappedValue ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.Ink.faint)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(expanded.wrappedValue ? "Collapse \(title)" : "Expand \(title)")
     }
 
     private let detailCurve: Animation = .timingCurve(0.22, 1, 0.36, 1, duration: 0.3)
@@ -235,14 +304,6 @@ struct MenuRootView: View {
     /// inset so it doesn't run to the panel edges.
     private var insetDivider: some View {
         Rectangle().fill(Theme.hairline).frame(height: 0.5).padding(.horizontal, 14)
-    }
-
-    private var listHeader: some View {
-        HStack {
-            SectionLabel(text: scope == .apps ? "Application" : scope == .websites ? "Website" : "Activity")
-            Spacer()
-            SectionLabel(text: "Focused")
-        }
     }
 
     private var footer: some View {

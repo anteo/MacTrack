@@ -81,3 +81,39 @@ struct ChartLineData: Identifiable {
     let points: [CGPoint]   // x = minute-of-day, y = cumulative minutes
     let totalMinutes: Double
 }
+
+enum UsageChartMode: String, CaseIterable, Identifiable {
+    case cumulative
+    case hourly
+    case workday
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .cumulative: return "Cumulative"
+        case .hourly: return "Per hour"
+        case .workday: return "Workday"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .cumulative: return "chart.xyaxis.line"
+        case .hourly: return "chart.bar.xaxis"
+        case .workday: return "timeline.selection"
+        }
+    }
+}
+
+struct HourlyChartBucket: Identifiable {
+    let hour: Int
+    let segments: [(id: String, label: String, color: Color, minutes: Double)]
+    var id: Int { hour }
+}
+
+struct WorkdayChartSegment: Identifiable {
+    let startMinute: Int
+    let endMinute: Int
+    let label: String
+    let color: Color
+    var id: String { "\(startMinute)-\(endMinute)-\(label)" }
+}

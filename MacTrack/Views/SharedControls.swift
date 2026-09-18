@@ -33,6 +33,43 @@ struct GlassIconButton: View {
     }
 }
 
+/// Compact icon-only selector for the graph modes. The symbols are intentionally
+/// paired with help text so the control stays quiet without becoming ambiguous.
+struct GraphModeSelector: View {
+    @Binding var selection: String
+    @Namespace private var ns
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(UsageChartMode.allCases) { mode in
+                let isSelected = selection == mode.rawValue
+                Button {
+                    withAnimation(.pill) { selection = mode.rawValue }
+                } label: {
+                    Image(systemName: mode.icon)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(isSelected ? Theme.Ink.primary : Theme.Ink.tertiary)
+                        .frame(width: 30, height: 25)
+                        .contentShape(Rectangle())
+                        .background {
+                            if isSelected {
+                                Capsule(style: .continuous)
+                                    .fill(Theme.fill(2))
+                                    .overlay(Capsule(style: .continuous)
+                                        .strokeBorder(Theme.hairlineStrong, lineWidth: 0.5))
+                                    .matchedGeometryEffect(id: "graph-pill", in: ns)
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+                .help(mode.title)
+            }
+        }
+        .padding(3)
+        .background(Theme.fill(0), in: Capsule(style: .continuous))
+    }
+}
+
 /// Section label in the small-caps tracked style used across the app.
 struct SectionLabel: View {
     let text: String
