@@ -129,7 +129,7 @@ Launch at login can be turned on in settings.
 
 ## Permissions
 
-To measure per-website time, MacTrack reads the active tab's address through macOS **Automation** (Apple Events). The first time it reads a browser, macOS asks for permission. Allow it, or website time won't be recorded. Change it later in **System Settings → Privacy & Security → Automation**, or from the gear in MacTrack.
+To measure per-website time, MacTrack reads the active tab's address through macOS **Automation** (Apple Events). The first time it reads a browser, macOS asks for permission. Allow it, or website time won't be recorded. For **Arc**, keep an Arc window in front until the prompt appears and choose **Allow**. If you dismissed the prompt or it did not appear, open **System Settings → Privacy & Security → Automation**, select **MacTrack**, and enable its **Arc** switch. You can get there from the gear in MacTrack too.
 
 ## Settings
 
